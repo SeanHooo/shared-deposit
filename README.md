@@ -75,15 +75,26 @@ persisted state from RPC.
 
 ## Try it in 30 seconds
 
-1. Open the live link, switch your wallet to **devnet**.
-2. Connect. The page reads the platform, merchants and your balances directly.
-3. Pick an asset, deposit, choose a merchant, set an item and a return time,
-   confirm the authorization.
-4. Switch to the merchant wallet. Accept and lock the deposit.
-5. Return the item. The amount is released back to your passport — and is now
-   spendable at the second merchant without depositing again.
+### With no wallet at all
 
-Step 5 is the whole product.
+- Open the live link. The header band prints the slot it just read from devnet.
+- Open the **Operator** console. It lists the platform operator, both test mints and both
+  registered merchants — as full addresses, every one of which opens in an explorer.
+
+### With any devnet wallet — yours, empty, unrelated
+
+- Still in the **Operator** console, click **Query this role's activity**. The history is
+  read from the *platform* account rather than from your wallet, so it shows what actually
+  happened on devnet: the platform initialized, two merchants registered, and a guest's
+  passport, asset account and deposit — those last three in a single transaction. Every
+  row carries the signature it came from.
+- If you hold a little devnet SOL, deposit and withdraw it. That path is yours alone and
+  needs nobody's permission, which is what an account the guest owns is for.
+
+The rest of the loop needs a second party: a lock is accepted by a *merchant* key, and the
+recorded demo's two merchants are wallets held by the developer. That is the part the video
+shows — and the activity above is how you confirm a rental happened without having to trust
+the video. Step by step: [DEMO-SCRIPT.md](DEMO-SCRIPT.md).
 
 ## Roles
 
@@ -134,6 +145,7 @@ is verified against the **actual compiled SBF program**:
 | Frozen-state rule | Frozen rentals do **not** auto-release at 180 days; only the original merchant can unfreeze after compensation |
 | Wallet-signed browser E2E | Full four-role flow with real Wallet Standard signatures, not mocked state |
 | Deliberate RPC failure | The response is dropped *after* the validator executed. The UI blocks new writes, survives a reload, and resolves the saved signature. The balance increases exactly once |
+| Deployed-build smoke test | The **live URL** in a real browser: zero page errors, console errors, failed requests and 4xx responses, a live slot read, and the platform's real audit trail read back with a wallet that holds none of the demo's keys |
 | Genesis check | Funds operations are blocked unless the RPC is genuinely devnet |
 
 Reproduce it yourself. No keys, no funded wallet and no network needed: the
@@ -142,8 +154,11 @@ suite starts its own validator and deploys the compiled program.
 ```bash
 cd app
 npm install && npx playwright install chromium
-npm test           # 10 unit and SBF integration tests, ~6s
+npm test           # 32 unit tests over the client's decoding and validation, ~6s
 npm run test:e2e   # 3 browser tests driving all four consoles, ~45s
+
+# The deployed build, against the URL above rather than a local validator:
+DEMO_URL=https://shared-passport.vercel.app npm run test:e2e
 ```
 
 The e2e run also regenerates the console screenshots above.
