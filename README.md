@@ -11,7 +11,7 @@ reusable at the next merchant — no re-depositing, no refund wait.
 
 | | |
 | --- | --- |
-| **Live demo (devnet)** | https://YOUR-DEMO-URL — connect a wallet switched to devnet |
+| **Live demo (devnet)** | https://shared-passport.vercel.app — connect a wallet switched to devnet |
 | **Demo video (3 min)** | https://YOUR-VIDEO-URL |
 | **Program** | `Bw5pP788g5eK117b7oA1dzSMg4N5ZG5vjcHpEKTzzN2o` |
 | **Network** | Solana devnet |
