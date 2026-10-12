@@ -9,7 +9,8 @@
     "preview": "vite preview",
     "generate": "node scripts/generate-client.mjs",
     "test": "vitest run tests/*.test.ts",
-    "test:e2e": "NODE_OPTIONS='--import tsx' playwright test"
+    "test:e2e": "NODE_OPTIONS='--import tsx' playwright test",
+    "report:loop": "NODE_OPTIONS='--import tsx' tsx scripts/report-loop.ts"
   },
   "dependencies": {
     "@solana-program/system": "^0.15.0",
