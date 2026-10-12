@@ -150,12 +150,38 @@ Expect `Executable: true` and `Upgrade Authority: CMNgjVqaaopNCZTsKBzD2zVxxQHMrF
 ## Step 2 — Initialize the platform (browser, ~10 min)
 
 The platform can only be initialized by the program **upgrade authority**, which is
-the wallet that deployed: `CMNgjVqaaopNCZTsKBzD2zVxxQHMrFejNiaQW9iVXrxF`.
+the wallet that deployed: `CMNgjVqaaopNCZTsKBzD2zVxxQHMrFejNiaQW9iVXrxF`. This is not a
+convention, it is enforced — `programs/shared-deposit-passport/src/lib.rs:552`
+constrains `program_data.upgrade_authority_address == Some(operator.key())`. That is
+the only place in the program that reads the upgrade authority; every other operator
+action compares against `Platform.operator`, which is set to whoever signs *this*
+transaction. So this one signature decides who the operator is permanently.
 
-Import that keypair into Phantom as a **devnet-only** account (Phantom → Add
-account → Import private key). Note the trade-off honestly: it puts the devnet
-key inside a browser extension. It never enters this repository, and it must never
-be reused for anything real.
+Which means the deploy keypair has to be usable from the browser. Phantom cannot
+import a JSON keypair file, so convert it to the base58 form it accepts. Pipe it
+straight to the clipboard: that way the secret is never printed to the terminal and
+never lands in your shell history.
+
+```bash
+cd app
+node --input-type=module -e "
+import { getBase58Decoder } from '@solana/kit';
+import { readFileSync } from 'node:fs';
+const k = Uint8Array.from(JSON.parse(readFileSync(process.env.HOME + '/.config/solana/id.json', 'utf8')));
+console.log(getBase58Decoder().decode(k));
+" | pbcopy && echo "88-char key is on your clipboard"
+```
+
+Then Phantom → Add account → Import private key, paste, and clear the clipboard with
+`pbcopy < /dev/null`.
+
+Two honest notes. This puts a real secret inside a browser extension; the key is
+devnet-only and governs a program holding no funds, and it must never be reused for
+anything that holds value. And the alternative avoids the secret entirely: run
+`solana program set-upgrade-authority` to make a Phantom-native wallet the authority
+first, then that wallet signs. That is cleaner in principle, but it is three more
+steps on the critical path, it changes an on-chain authority, and it is untested here.
+This runbook keeps the import because it is one step with no state change.
 
 Four wallets, two consoles. The app picks the landing console from the connected
 wallet, so you switch roles by switching the active account in Phantom:
