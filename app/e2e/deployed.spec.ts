@@ -6,7 +6,7 @@
  * bundle that throws on load all pass those tests and fail here. Skipped unless DEMO_URL
  * is set, so the suite stays offline by default.
  *
- *   DEMO_URL=https://shared-passport.vercel.app npm run test:e2e
+ *   DEMO_URL=https://shared-deposit.vercel.app npm run test:e2e
  *
  * The addresses below are this deployment's fixed values, recorded in DEPLOYMENT.md. They
  * are pinned on purpose: if the demo is ever redeployed with a fresh platform, these
@@ -14,8 +14,11 @@
  * passes against any deployment is not checking this one.
  */
 import { expect, test } from "@playwright/test";
+import { createHash } from "node:crypto";
+import { existsSync, readFileSync } from "node:fs";
 import { generateKeyPairSigner } from "@solana/kit";
-import { installWallets, loginAs, openConsole } from "./harness";
+import { installWallets, loginAs, openConsole, programArtifact } from "./harness";
+import * as p from "../src/program";
 
 const demoUrl = process.env.DEMO_URL;
 test.skip(!demoUrl, "set DEMO_URL to smoke-test a deployed build");
@@ -122,4 +125,84 @@ test("a wallet from outside the demo can read the real activity", async ({
   // events carry the same signature.
   await expect(rows.filter({ hasText: "Deposit" }).first()).toBeVisible();
   await expect(rows.filter({ hasText: "Passport created" }).first()).toBeVisible();
+});
+
+test("the artifact in the repository is the program devnet is running", async ({
+  page,
+}) => {
+  // The suite claims its browser tests exercise the program that is deployed. That claim is
+  // checkable rather than a promise: the cluster holds the bytes, so anyone can hash them
+  // and compare. It is the difference between "the tests pass" and "the tests pass against
+  // the code you can call", and it is cheap enough to assert on every run.
+  const local = programArtifact();
+  const programData = await p.programDataAddress();
+
+  await page.goto(demoUrl!, { waitUntil: "load" });
+  const remote = await page.evaluate(async (address: string) => {
+    const response = await fetch("https://api.devnet.solana.com", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        jsonrpc: "2.0",
+        id: 1,
+        method: "getAccountInfo",
+        params: [address, { encoding: "base64" }],
+      }),
+    });
+    const data = (await response.json()).result.value.data[0];
+    const binary = atob(data);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+    // A ProgramData account is a fixed header followed by the ELF file itself.
+    const elf = bytes.subarray(45);
+    const digest = await crypto.subtle.digest("SHA-256", elf);
+    return {
+      magic: String.fromCharCode(...elf.subarray(0, 4)),
+      sha256: [...new Uint8Array(digest)]
+        .map((b) => b.toString(16).padStart(2, "0"))
+        .join(""),
+    };
+  }, programData);
+
+  expect(remote.magic).toBe("\x7fELF");
+  expect(
+    remote.sha256,
+    `${local.path} differs from the program at ${programData}`,
+  ).toBe(local.sha256);
+});
+
+test("the deployed bundle is the one this repository builds", async ({ page }) => {
+  // The failure this guards against is silent, and it happened twice while preparing this
+  // submission: `npm run build` succeeds, `dist/` keeps the timestamps it already had, and
+  // the hosted site serves an earlier afternoon's interface - once including a confirmation
+  // dialog that named a merchant's identity address as the transaction's signer. Nothing
+  // warns, and the page loads perfectly. Comparing digests is the only form of this check
+  // that a page which merely renders cannot satisfy.
+  test.skip(
+    !existsSync("dist/index.html"),
+    "no local build to compare against - run: VITE_SOLANA_RPC_URL=https://api.devnet.solana.com npm run build",
+  );
+  const html = readFileSync("dist/index.html", "utf8");
+  const bundle = /src="([^"]+\.js)"/.exec(html)?.[1];
+  expect(bundle, "dist/index.html names no script").toBeTruthy();
+  const local = createHash("sha256")
+    .update(readFileSync(`dist${bundle}`))
+    .digest("hex");
+
+  await page.goto(demoUrl!, { waitUntil: "load" });
+  const remote = await page.evaluate(async (path: string) => {
+    const response = await fetch(path);
+    const digest = await crypto.subtle.digest(
+      "SHA-256",
+      await response.arrayBuffer(),
+    );
+    return [...new Uint8Array(digest)]
+      .map((b) => b.toString(16).padStart(2, "0"))
+      .join("");
+  }, bundle!);
+
+  expect(
+    remote,
+    `${demoUrl} is not serving dist${bundle}. Rebuild, redeploy, or check that this URL is not an older deployment.`,
+  ).toBe(local);
 });

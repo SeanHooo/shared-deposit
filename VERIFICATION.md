@@ -60,6 +60,26 @@ What the rehearsal did not cover: the day the timer runs out. The 180-day keeper
 cannot be exercised on devnet without waiting, which is why it stays a local test with
 time travel, and why the video says so.
 
+## The bytes, named
+
+A test suite is only evidence about the thing it actually ran. Three digests, and where
+each was read from, so that claim can be checked rather than believed:
+
+| What | Digest | Read from |
+| --- | --- | --- |
+| The program | `4acb20377c71624e2985c81a36bb099a643f938ca0808fccbd9b9bfc05c39841` | `programs/shared-deposit-passport/artifacts/shared_deposit_passport.so`, and independently out of the ProgramData account on devnet |
+| The client bundle | printed by the build | `app/dist/assets/*.js`, and from the deployed site |
+| The artifact the suite deploys | the same `.so` as row 1 | `app/e2e/harness.ts` logs the path and digest before deploying |
+
+A ProgramData account is a 45-byte header followed by the ELF file, which is why the program
+can be hashed from the cluster: `getAccountInfo` on `DNLy1eDh7ewSePKnnqpmWPikYA4XsM14f33Tf9hWYJVr`,
+skip 45 bytes, hash the remaining 506,456. That is `deployed.spec.ts`, not a claim in prose —
+`DEMO_URL=… npm run test:e2e` compares the repository's artifact and the local build against
+what the live site and the cluster are actually serving. Both checks exist because both
+failed once during preparation: the hosted site served a bundle built before the interface
+was corrected, and the project was renamed after the live URL had already been written into
+these documents.
+
 
 ## Local results, from before the deployment
 

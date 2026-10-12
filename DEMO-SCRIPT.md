@@ -17,7 +17,7 @@ than cuts, and the flow is a single session anyway.
 ## Setup before recording
 
 ```bash
-# 1. Open https://shared-passport.vercel.app in the browser you record with.
+# 1. Open https://shared-deposit.vercel.app in the browser you record with.
 #    Record the deployed build, not a dev server. The address bar then shows the URL a
 #    judge will open, and the take proves the artifact you actually submitted rather
 #    than a variant of it. Connect the wallet on that origin, because a wallet

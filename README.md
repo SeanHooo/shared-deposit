@@ -11,7 +11,7 @@ reusable at the next merchant — no re-depositing, no refund wait.
 
 | | |
 | --- | --- |
-| **Live demo (devnet)** | https://shared-passport.vercel.app — connect a wallet switched to devnet |
+| **Live demo (devnet)** | https://shared-deposit.vercel.app — connect a wallet switched to devnet |
 | **Demo video (3 min)** | https://YOUR-VIDEO-URL |
 | **Program** | `Bw5pP788g5eK117b7oA1dzSMg4N5ZG5vjcHpEKTzzN2o` |
 | **Network** | Solana devnet |
@@ -165,7 +165,7 @@ npm test           # 32 unit tests over the client's decoding and validation, ~6
 npm run test:e2e   # 3 browser tests driving all four consoles, ~45s
 
 # The deployed build, against the URL above rather than a local validator:
-DEMO_URL=https://shared-passport.vercel.app npm run test:e2e
+DEMO_URL=https://shared-deposit.vercel.app npm run test:e2e
 ```
 
 The e2e run also regenerates the console screenshots above.
@@ -216,7 +216,14 @@ The Anchor workspace requires Rust, Solana CLI, Anchor CLI and a devnet wallet. 
 bash scripts/build.sh
 ```
 
-Never commit wallet keypairs, seed phrases, or devnet secrets.
+Never commit wallet keypairs, seed phrases, or devnet secrets. The compiled program itself
+**is** committed, deliberately:
+`programs/shared-deposit-passport/artifacts/shared_deposit_passport.so` is byte for byte the
+program deployed on devnet (`sha256 4acb2037…9841`), and `scripts/build.sh` overwrites it so
+a rebuild keeps the tests and the deployment on the same bytes. `target/` is generated and
+gitignored, so without this copy the suite could not run for anyone who cloned the
+repository without a Solana toolchain. The program is public on devnet anyway — it is the
+thing under test, not a secret.
 
 The build script explicitly uses SBF platform-tools v1.57 (Rust/Cargo 1.95).
 The Solana CLI's default v1.48 tools cannot parse the current dependencies'
@@ -226,7 +233,7 @@ it does not deploy or send transactions.
 ## Generate, verify and run
 
 ```bash
-bash scripts/build.sh
+bash scripts/build.sh          # only when the program itself changes
 cd app
 npm install
 npm run generate
@@ -236,6 +243,10 @@ npx playwright install chromium
 npm run test:e2e
 npm run dev -- --host 127.0.0.1
 ```
+
+Only the first line needs a toolchain. The suite needs neither Rust nor a network: it starts
+an in-process validator, deploys the committed artifact, and drives a real browser — and it
+prints the digest of what it deployed, so any run can be tied to a build.
 
 Against a live deployment, one read-only command reports what the browser setup has
 completed and what is left, reading it from the chain rather than from memory. It

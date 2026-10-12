@@ -20,7 +20,7 @@ exact field names vary, so each block is written to stand alone. Fill every
 | Team / country / contact | yourself |
 
 The live demo URL and the repository URL are already written into both blocks below:
-`https://shared-passport.vercel.app` and `https://github.com/SeanHooo/shared-deposit`.
+`https://shared-deposit.vercel.app` and `https://github.com/SeanHooo/shared-deposit`.
 The deployed bundle was fetched and its bytes matched the locally verified build, so it
 is not a link that merely resolves — it is the code described in
 [VERIFICATION.md](VERIFICATION.md).
@@ -143,7 +143,7 @@ This is a hackathon build with unusually thorough verification.
 ## Links block
 
 ```
-Live demo (devnet):  https://shared-passport.vercel.app
+Live demo (devnet):  https://shared-deposit.vercel.app
 Demo video (3 min):  YOUR-VIDEO-URL
 Repository:          https://github.com/SeanHooo/shared-deposit
 Program:             Bw5pP788g5eK117b7oA1dzSMg4N5ZG5vjcHpEKTzzN2o
@@ -176,7 +176,7 @@ Chapters
 02:35 What is verified, and what is not yet real
 
 Links
-Live demo: https://shared-passport.vercel.app
+Live demo: https://shared-deposit.vercel.app
 Code: https://github.com/SeanHooo/shared-deposit
 Program: Bw5pP788g5eK117b7oA1dzSMg4N5ZG5vjcHpEKTzzN2o
 Verification: see VERIFICATION.md

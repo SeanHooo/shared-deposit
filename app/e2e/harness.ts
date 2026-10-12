@@ -12,6 +12,8 @@
  */
 import { expect, type Page } from "@playwright/test";
 import { spawn, type ChildProcess } from "node:child_process";
+import { createHash } from "node:crypto";
+import { existsSync, readFileSync } from "node:fs";
 import { Surfnet } from "@solana/surfpool";
 import {
   createKeyPairSignerFromBytes,
@@ -44,6 +46,48 @@ export const shortAddress = (value: string) =>
   `${value.slice(0, 6)}…${value.slice(-5)}`;
 
 /**
+ * Where the compiled program lives, relative to `app/` where Playwright runs.
+ *
+ * The committed copy comes first on purpose. `target/` is generated and ignored, so
+ * without this copy the suite cannot run for anyone who cloned the repository without the
+ * Solana toolchain - and the README promises exactly that it can. Putting the committed
+ * copy first also means the tests deploy the artifact in version control rather than
+ * whatever happens to be lying in a local build directory.
+ */
+export const COMMITTED_SO =
+  "../programs/shared-deposit-passport/artifacts/shared_deposit_passport.so";
+export const BUILT_SO = "../target/deploy/shared_deposit_passport.so";
+
+/**
+ * The artifact under test, with its digest so a failure can name the exact bytes.
+ *
+ * A local rebuild that has not been copied into the repository is reported rather than
+ * ignored: the two files agreeing is the whole reason a test can claim to exercise the
+ * program that is deployed on devnet, and a silent divergence would make that claim false.
+ */
+export function programArtifact(): { path: string; sha256: string } {
+  const path = existsSync(COMMITTED_SO)
+    ? COMMITTED_SO
+    : existsSync(BUILT_SO)
+      ? BUILT_SO
+      : null;
+  if (!path)
+    throw new Error(
+      `No compiled program found at ${COMMITTED_SO} or ${BUILT_SO}. See README "Generate, verify and run".`,
+    );
+  const digest = (file: string) =>
+    createHash("sha256").update(readFileSync(file)).digest("hex");
+  const sha256 = digest(path);
+  if (path === COMMITTED_SO && existsSync(BUILT_SO) && digest(BUILT_SO) !== sha256)
+    console.warn(
+      `\n[harness] ${BUILT_SO} differs from the committed artifact.\n` +
+        `[harness] Copy it into programs/shared-deposit-passport/artifacts/ to test your build,\n` +
+        `[harness] otherwise the suite keeps exercising the committed one (${sha256.slice(0, 12)}…).\n`,
+    );
+  return { path, sha256 };
+}
+
+/**
  * Boots an offline validator, deploys the compiled SBF program, makes the
  * configured payer the upgrade authority, spawns Vite against that validator,
  * and waits for the page to answer.
@@ -61,10 +105,9 @@ export async function startHarness(): Promise<Harness> {
     Camping: await generateKeyPairSigner(),
   };
   for (const who of Object.values(people)) net.fundSol(who.address, 20_000_000_000);
-  net.deploy({
-    programId: p.PROGRAM_ADDRESS,
-    soPath: "../target/deploy/shared_deposit_passport.so",
-  });
+  const artifact = programArtifact();
+  console.log(`[harness] deploying ${artifact.path} (sha256 ${artifact.sha256})`);
+  net.deploy({ programId: p.PROGRAM_ADDRESS, soPath: artifact.path });
   // Mark the ProgramData account upgraded and point its pending authority at
   // the operator, so initializePlatform can be called from the browser.
   const dataAddress = await p.programDataAddress();
