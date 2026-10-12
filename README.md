@@ -87,12 +87,39 @@ Step 5 is the whole product.
 
 ## Roles
 
-| Role | Can do |
-| --- | --- |
-| **Guest** | Deposit SOL/USDC/USDT, authorize one rental, revoke an unused authorization, withdraw unlocked funds |
-| **Merchant** | Accept and lock a guest-authorized amount, submit return evidence, freeze on damage/missing, unfreeze after compensation |
-| **Operator** | Initialize the platform, allowlist merchants, pause/resume a merchant |
-| **Keeper** | Release a rental that stayed active and untouched for 180 days. Never touches deposits |
+| Console | URL | Can do |
+| --- | --- | --- |
+| **Guest** | `#/guest` | Deposit SOL/USDC/USDT, authorize one rental, revoke an unused authorization, withdraw unlocked funds |
+| **Merchant** | `#/merchant` | Accept and lock a guest-authorized amount, submit return evidence, freeze on damage/missing, unfreeze after compensation |
+| **Operator** | `#/operator` | Initialize the platform, allowlist merchants, pause/resume a merchant |
+| **Keeper** | `#/keeper` | Release a rental that stayed active and untouched for 180 days. Never touches deposits |
+
+Four consoles, one program state machine, one wallet identity. They are separated
+by URL rather than by repository because the real authorization boundary is the
+program, not the page: nothing a console could do in its own bundle would change
+what the chain accepts. The wallet chooses the landing console — the platform
+authority lands on operations, a registered merchant on the merchant console,
+everyone else on the guest console — and any console you open by hand is
+remembered across reloads.
+
+Routing is hash-based on purpose: the fragment never reaches the server, so one
+static build serves every deep link with no rewrite rules and no way to 404 one.
+
+## Consoles
+
+![Guest console](docs/screenshots/guest.png)
+
+![Merchant console](docs/screenshots/merchant.png)
+
+![Operator console](docs/screenshots/operator.png)
+
+![Keeper console](docs/screenshots/keeper.png)
+
+These are saved by the end-to-end run (`app/e2e/product.spec.ts`) at the point in
+the flow where each console is populated. They therefore show state produced by
+real signed transactions against the compiled program on a local validator, not a
+staged mock, and they cannot silently drift from the UI. The header band in each
+one shows the console it came from.
 
 ## Why this is not a mock
 
@@ -108,6 +135,18 @@ is verified against the **actual compiled SBF program**:
 | Wallet-signed browser E2E | Full four-role flow with real Wallet Standard signatures, not mocked state |
 | Deliberate RPC failure | The response is dropped *after* the validator executed. The UI blocks new writes, survives a reload, and resolves the saved signature. The balance increases exactly once |
 | Genesis check | Funds operations are blocked unless the RPC is genuinely devnet |
+
+Reproduce it yourself. No keys, no funded wallet and no network needed: the
+suite starts its own validator and deploys the compiled program.
+
+```bash
+cd app
+npm install && npx playwright install chromium
+npm test           # 10 unit and SBF integration tests, ~6s
+npm run test:e2e   # 3 browser tests driving all four consoles, ~45s
+```
+
+The e2e run also regenerates the console screenshots above.
 
 Test commands and current results: [VERIFICATION.md](VERIFICATION.md).
 Acceptance scenarios: [tests/acceptance.md](tests/acceptance.md).

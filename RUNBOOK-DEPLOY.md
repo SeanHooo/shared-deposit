@@ -16,23 +16,32 @@ airdrop waiting. Do **step 0 now**, in parallel with everything else.
 ```bash
 export PATH="${HOME}/.local/share/solana/install/active_release/bin:${PATH}"
 
+# Every command below uses this variable. `--url devnet` is a cluster *alias* that
+# always resolves to api.devnet.solana.com, so if that endpoint is blocked you
+# must override here or the deploy will hang even after `solana config set`.
+RPC=https://api.devnet.solana.com
+
 # 1. Does devnet answer at all from your network?
 solana --version
-solana config get                      # must show https://api.devnet.solana.com
+solana config set --url "$RPC"
 solana balance                         # the deploy authority wallet
 solana address                         # expect CMNgjVqaaopNCZTsKBzD2zVxxQHMrFejNiaQW9iVXrxF
 ```
 
 **If `solana balance` times out**, devnet RPC is unreachable from your network.
 This is the single most dangerous failure mode today. Use a dedicated devnet
-endpoint instead:
+endpoint instead — set it in the variable, so steps 1 and 4 both inherit it:
 
 ```bash
 # Free Helius devnet endpoint (or QuickNode). Create the key, then:
-solana config set --url https://devnet.helius-rpc.com/?api-key=YOUR_KEY
+RPC='https://devnet.helius-rpc.com/?api-key=YOUR_KEY'
+solana config set --url "$RPC"
+solana balance
 ```
 
-Then use the same URL for the frontend build in step 4.
+Note that `solana airdrop` goes to whatever `solana config` points at, and hosted
+providers often refuse to serve it. If `requestAirdrop` fails there, fund through
+the web faucet instead and keep the custom RPC only for the app and the deploy.
 
 **Fund to ~6 SOL.** The deploy needs ~5.3 SOL at peak: ~2.57 SOL of ProgramData
 rent (permanent) plus ~2.55 SOL of temporary buffer rent (recoverable after a
@@ -67,8 +76,9 @@ a new hash.
 ```bash
 cd /Users/seanho/Desktop/shared-deposit-passport
 export PATH="${HOME}/.local/share/solana/install/active_release/bin:${PATH}"
+RPC=https://api.devnet.solana.com   # or your Helius URL from step 0
 
-NO_DNA=1 solana program deploy --url devnet \
+NO_DNA=1 solana program deploy --url "$RPC" \
   --program-id target/deploy/shared_deposit_passport-keypair.json \
   target/deploy/shared_deposit_passport.so
 ```
@@ -83,13 +93,13 @@ command; the buffer is reused. If it will not finish, add:
 Verify:
 
 ```bash
-solana program show --url devnet Bw5pP788g5eK117b7oA1dzSMg4N5ZG5vjcHpEKTzzN2o
+solana program show --url "$RPC" Bw5pP788g5eK117b7oA1dzSMg4N5ZG5vjcHpEKTzzN2o
 ```
 
 Expect `Executable: true` and `Upgrade Authority: CMNgjVqaaopNCZTsKBzD2zVxxQHMrFejNiaQW9iVXrxF`.
 
 > If the deploy fails after you had a previous buffer, recover the temporary rent
-> with `solana program close --buffers`. Keep the program itself open.
+> with `solana program close --buffers --url "$RPC"`. Keep the program itself open.
 
 ## Step 2 — Initialize the platform (browser, ~10 min)
 
@@ -110,9 +120,39 @@ be reused for anything real.
 3. `Create USDC test mint` → wait for `Confirmed on chain`. Repeat for `Create USDT test mint`.
 4. `Initialize platform`.
 5. Open `Fund devnet test assets`, send ~100 USDC and ~100 USDT to the guest wallet
-   you will demo with.
+you will demo with.
 6. Register two merchants (wallet public key + name). Use two more Phantom
    accounts: `Bikes` and `Camping`.
+
+### Fund every signing wallet with SOL (do not skip)
+
+Each role pays its own network fee: the guest pays to deposit, authorize and
+withdraw, and each merchant pays to lock, return and compensate. A wallet with
+0 SOL cannot move anything, and the failure looks like a simulation error rather
+than a funding problem. Fund all four wallets before the dry run:
+
+```bash
+for W in <guest> <bikes> <camping>; do solana transfer --url "$RPC" "$W" 0.5 --allow-unfunded-recipient; done
+```
+
+Or use https://faucet.solana.com, which allows roughly 1 SOL per address per day.
+0.5 SOL each is far more than the fee total; this is devnet, so it costs nothing.
+
+### Two Phantom traps that will bite during recording
+
+- Phantom defaults to **mainnet**. Switch it to Devnet first, or every action will
+  fail with an account-not-found style error.
+- All accounts inside one Phantom extension are exposed to the page as **one**
+  wallet called `Phantom`, and connecting returns whichever account is currently
+  selected in the extension. So switching role means switching the active account
+  in Phantom, then clicking **Disconnect** and **Connect Phantom** in the app.
+  Confirm that this actually updates the address shown in the header band during the
+  step 3 dry run — it is the one interaction the automated suite cannot cover,
+  because the suite injects four independent synthetic wallets instead.
+- The `USDC`/`USDT` balances shown in Phantom are the *real* devnet USDC/USDT. The
+  app's test mints are separate assets, so Phantom will show them as unknown or
+  zero. That is expected; trust the balances in the app, which reads them from the
+  chain.
 
 ## Step 3 — Prove it is live before you record
 
@@ -127,6 +167,8 @@ without recording**:
 - [ ] Guest authorizes 5 USDC to `Camping` **without depositing** ← the money shot
 - [ ] `Camping` locks, returns
 - [ ] Guest withdraws
+
+Every wallet in that loop must hold devnet SOL, or the run stalls on a fee error.
 
 Then update `VERIFICATION.md`'s devnet acceptance checklist with real results and
 the program address.

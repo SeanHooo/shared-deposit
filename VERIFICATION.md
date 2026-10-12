@@ -1,4 +1,4 @@
-# Verification — 2026-10-11
+# Verification — 2026-10-12
 
 The MVP business flows are implemented and verified locally against the actual
 compiled Solana program. Devnet acceptance is still pending deployment; local
@@ -10,14 +10,20 @@ results do not mean the program is live.
 | Typed client generation | `npm run generate` passed; Codama generated from that IDL |
 | Frontend production build | `npm run build` passed |
 | Program and input checks | `npm test`: 10 tests passed, including 7 grouped real-SBF scenarios |
-| Browser product flow | `npm run test:e2e`: complete Wallet Standard flow passed with real synthetic signatures |
+| Browser product flow | `npm run test:e2e`: 3 tests passed — the full Wallet Standard flow, plus console deep links and wallet-based landing consoles |
 | Default devnet page | Browser reads actual devnet, correctly reports not deployed; no page errors |
 
-The browser test creates both SPL test mints with real instructions, initializes
-the platform, funds the guest with test tokens, registers two merchants and tests
-pause/resume. It then exercises all three assets, normal returns, withdrawal,
-photo-file hashing, damage and compensation, keeper time travel, reload and
-wallet switching, cancellation, and chain history.
+The browser tests drive the real UI against a real validator with real synthetic
+signatures. The first creates both SPL test mints with real instructions,
+initializes the platform, funds the guest with test tokens, registers two
+merchants and tests pause/resume. It then exercises all three assets, normal
+returns, withdrawal, photo-file hashing, damage and compensation, keeper time
+travel, reload and wallet switching, cancellation, and chain history.
+
+The other two cover routing: every console is reachable by its own deep link,
+only that console renders, the link survives a reload, a bare link normalizes to
+the guest console, and the connected wallet chooses the landing console without
+overriding a console the user opened by hand.
 
 It deliberately drops an RPC response **after execution**, checks that new writes
 are blocked, reloads the page and resolves the original saved signature. The SOL
@@ -36,7 +42,9 @@ and validate RPC account owner, discriminator, allocated length and full devnet
 genesis hash. A 390-pixel browser view is checked for horizontal overflow.
 
 Screenshots: [mobile completed flow](tests/product-mobile.png),
-[actual devnet readiness](tests/devnet-readiness.png).
+[actual devnet readiness](tests/devnet-readiness.png). Per-console screenshots are
+saved by the e2e run into [docs/screenshots/](docs/screenshots/) and are embedded
+in the README.
 
 ## Remaining external steps
 

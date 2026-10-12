@@ -1,6 +1,6 @@
 ---
 artifact: acceptance-criteria
-version: "1.1"
+version: "1.2"
 created: 2026-10-11
 status: implemented-local
 ---
@@ -11,7 +11,10 @@ These scenarios are the implementation handoff derived from `PRD.md` and the edg
 
 ## Story Context
 
-支持 PRD FR-1–FR-14。所有状态来自程序，第一版仅 devnet；正常释放回程序余额，游客主动提现回钱包。授权与商户接受使用两笔独立签名交易。
+Supports PRD FR-1 through FR-14. All state is read from the program. v1 is
+devnet-only. A normal return releases funds back to the passport balance; the
+guest withdraws to their own wallet separately. Authorization and merchant
+acceptance are two independently signed transactions.
 
 ## Happy Path
 
