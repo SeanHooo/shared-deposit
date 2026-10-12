@@ -37,7 +37,9 @@ h2 { margin-bottom: 0; font-size: 20px; letter-spacing: -.01em; }
 .badge { white-space: nowrap; border: 1px solid #2d806f; border-radius: 999px; padding: 5px 9px; color: #76d9bd; font-size: 11px; font-weight: 800; }
 .badge.neutral { border-color: #344954; color: #99aeb7; }
 .asset-list { display: grid; gap: 9px; }
-.asset-row { display: grid; grid-template-columns: 38px 1fr auto auto; align-items: center; gap: 12px; width: 100%; padding: 12px; text-align: left; color: inherit; border: 1px solid #24343e; border-radius: 7px; background: #131f26; }
+.asset-row { display: grid; grid-template-columns: max-content 1fr auto auto; align-items: center; gap: 12px; width: 100%; padding: 12px; text-align: left; color: inherit; border: 1px solid #24343e; border-radius: 7px; background: #131f26; }
+/* The symbol column sizes to its content: a fixed 38px broke "USDC" in two. */
+.asset-row > strong { white-space: nowrap; }
 .asset-row:hover, .asset-row.selected { border-color: #4a8f82; background: #172a2d; }
 .asset-mark { display: grid; place-items: center; width: 32px; height: 32px; border-radius: 50%; color: #baf0df; background: #1c5d4f; font-weight: 850; }
 .asset-name, .asset-value { display: grid; gap: 3px; }

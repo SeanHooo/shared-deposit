@@ -22,6 +22,14 @@ test.afterAll(() => {
   h?.stop();
 });
 
+/**
+ * Console screenshots for the README. Taken at the default 1280 viewport from
+ * this same run, so they show state produced by real signed transactions on a
+ * real validator rather than a mocked page.
+ */
+const shot = (page: Page, name: string) =>
+  page.screenshot({ path: `../docs/screenshots/${name}.png`, fullPage: true });
+
 test("all product roles use real signed chain transactions and reload recovery", async ({
   page,
 }) => {
@@ -60,6 +68,7 @@ test("all product roles use real signed chain transactions and reload recovery",
     "Resume new rentals",
     page.locator("article").filter({ hasText: "Bikes · Paused" }),
   );
+  await shot(page, "operator");
   await loginAs(page, "Guest");
   await openConsole(page, "Guest");
   for (const asset of ["SOL", "USDC", "USDT"]) {
@@ -124,6 +133,7 @@ test("all product roles use real signed chain transactions and reload recovery",
     await transact(page, "Withdraw to wallet");
   }
   await authorizeRental(page, h, "USDC", "damage-test", "5");
+  await shot(page, "guest");
   await loginAs(page, "Bikes");
   await openConsole(page, "Merchant");
   await transact(
@@ -142,6 +152,7 @@ test("all product roles use real signed chain transactions and reload recovery",
       .filter({ hasText: "damage-test" })
       .filter({ hasText: "Active" }),
   );
+  await shot(page, "merchant");
   await transact(
     page,
     "Confirm compensation, unfreeze",
@@ -168,6 +179,7 @@ test("all product roles use real signed chain transactions and reload recovery",
   await loginAs(page, "Operator");
   await openConsole(page, "Keeper");
   await page.getByRole("button", { name: "Refresh", exact: true }).click();
+  await shot(page, "keeper");
   await transact(page, "Release to available balance");
   await page
     .getByRole("button", { name: "Query this role's activity", exact: true })
