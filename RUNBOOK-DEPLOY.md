@@ -43,11 +43,18 @@ Note that `solana airdrop` goes to whatever `solana config` points at, and hoste
 providers often refuse to serve it. If `requestAirdrop` fails there, fund through
 the web faucet instead and keep the custom RPC only for the app and the deploy.
 
-**Fund to 8 SOL.** The deploy needs **~7.06 SOL at peak**: ~3.53 SOL of ProgramData
-rent (permanent) plus ~3.53 SOL of temporary buffer rent (returned once the deploy
-finalizes) plus a few thousand lamports of fees. The peak is what blocks you, so
-the faucet requests must be made before you start, not during. Do not target 6 SOL;
-the earlier estimate came from a smaller build of the program.
+**Fund to 3 SOL.** The deploy needs **~2.6 SOL**, which is one rent of lamports:
+the deploy buffer is funded and then transferred into the ProgramData account, so
+the two do not coexist and the peak is not double. Do not target 6 or 8 SOL.
+
+An earlier revision of this file said 8 SOL because it used the published mainnet
+rent rate of 6,960 lamports per byte instead of measuring. The cluster charges
+5,080 for the same size, and the real deploy consumed **2.57367532 SOL** of rent
+plus ~0.0007 SOL of fees. Measure the rate rather than trusting a constant:
+
+```bash
+solana rent 506501          # authoritative, straight from the CLI
+```
 
 If airdrop fails, diagnose in this order — the error text is the same for every
 cause, so guessing wastes the time you do not have:
@@ -95,7 +102,7 @@ solana balance
 
 **Time box this to 45 minutes.** Devnet SOL is the one thing on this critical path
 you do not control, and every alternative below is a real, submittable plan. If you
-cannot reach ~7 SOL within that window, stop and switch to the localnet recording
+cannot reach ~3 SOL within that window, stop and switch to the localnet recording
 plan in the fallback section. A submitted video with an honest disclosure beats a
 perfect deploy that never got recorded.
 
@@ -190,9 +197,12 @@ addresses into the platform account and the program rejects any mint that is not
 
 ### Sanity check before recording
 
-- `solana balance --url "$RPC"` should show that the buffer rent came back: the
-  authority should hold roughly 3.5 SOL more than its peak-minus-net calculation
-  suggests, and comfortably more than 1.5 SOL to fund the other three wallets.
+- `solana balance --url "$RPC"` should read about **2.574 SOL less than you funded**:
+  the deploy locks one rent (2.57367532 SOL) in the ProgramData account plus roughly
+  0.0007 SOL of signature fees, and it returns nothing, because the buffer lamports
+  are transferred into the ProgramData account rather than refunded. A drop of about
+  twice that means a buffer was left behind; recover it with
+  `solana program close --buffers --url "$RPC"`.
 - Switch to `Guest`, deposit 20 USDC, and confirm the balance appears **without**
   clicking anything labelled initialize. The first deposit creates the passport and
   the asset sub-account inside the same transaction.

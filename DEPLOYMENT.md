@@ -7,22 +7,36 @@ Prepared 2026-10-11. No deployment transaction has been sent.
 | Network | Solana devnet |
 | Program | `Bw5pP788g5eK117b7oA1dzSMg4N5ZG5vjcHpEKTzzN2o` |
 | Configured CLI payer / initial upgrade authority | `CMNgjVqaaopNCZTsKBzD2zVxxQHMrFejNiaQW9iVXrxF` |
-| Read-only balance check | 0 devnet SOL |
-| Read-only program check | Not deployed |
+| Read-only balance check | 2.27559592 devnet SOL remaining after the deploy |
+| Read-only program check | Deployed and executable |
 | SBF artifact | `target/deploy/shared_deposit_passport.so`, 506,456 bytes |
 | SHA-256 | `4acb20377c71624e2985c81a36bb099a643f938ca0808fccbd9b9bfc05c39841` |
-| ProgramData rent at current size | 3.52613784 devnet SOL, charged once and never returned |
-| Deploy buffer rent | 3.52582464 devnet SOL, refunded when the deploy finalizes |
-| Peak funding required | Approximately 7.06 devnet SOL at the moment of deploy, because the buffer coexists with the ProgramData account; the buffer refund brings the net cost back to about 3.53 devnet SOL |
-| Initial funding estimate | Fund 8 devnet SOL so the deploy is not blocked by a shortfall |
+| ProgramData rent at current size | 2.57367532 devnet SOL, measured from the cluster rather than assumed |
+| Peak funding required | One rent, not two. The deploy buffer is funded and then transferred into the ProgramData account, so the two do not coexist. The successful deploy on 2026-10-12 consumed 2.57367532 SOL of rent plus roughly 0.0007 SOL of signature fees. |
+| Initial funding estimate | Fund 3 devnet SOL. The deploy itself needs about 2.6. |
 
-The rent figures follow the Solana rent formula (6,960 lamports per byte, plus a
-128-byte account overhead). They are a function of the artifact size, not of the
-network, so they can be recomputed without an RPC: a 1 MB program needs about
-6.96 SOL, and this 506,456-byte artifact scales from that. Earlier revisions of
-this file carried 2.57367532 SOL, which was correct for a 369,608-byte build and
-is stale now that the artifact has grown by 136,848 bytes. Confirm the exact
-figure with `node scripts/deployment-check.mjs <WALLET>` once an RPC is reachable.
+**The rent rate must be measured, not assumed.** This file carried 2.57367532 SOL,
+a revision in between recomputed it to 3.52613784 SOL from the published mainnet
+rate of 6,960 lamports per byte, and the cluster answered 2.57367532 SOL for the
+same request — implying 5,080 lamports per byte. The 6,960 figure was not
+invented: it reproduces the well-known mainnet rents exactly, including 2,039,280
+lamports for a 165-byte associated token account. It is simply the wrong input for
+this cluster. The measured figure is the one that matters, and the deploy
+confirmed it to the lamport, because the balance after deployment matches
+`funded − 2.57367532 − fees` to five decimal places.
+
+The script now derives the rate from three sample sizes instead of assuming it, and
+reports the samples so the derivation can be checked:
+
+```bash
+node scripts/deployment-check.mjs CMNgjVqaaopNCZTsKBzD2zVxxQHMrFejNiaQW9iVXrxF
+```
+
+The CLI answers the same question directly, for any size:
+
+```bash
+solana rent 506501
+```
 
 Read-only repeatable check:
 
