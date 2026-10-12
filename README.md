@@ -96,6 +96,13 @@ recorded demo's two merchants are wallets held by the developer. That is the par
 shows — and the activity above is how you confirm a rental happened without having to trust
 the video. Step by step: [DEMO-SCRIPT.md](DEMO-SCRIPT.md).
 
+Two things that look like bugs and are not. **Balances read zero for a wallet that has never
+deposited**, because a deposit account is derived from its owner's address: there is no
+global balance to display, and the demo guest's address is deliberately not in the bundle,
+which is why the activity trail rather than the balances is the thing a visitor can check.
+And **the two test mints are unfundable by anyone but the guest wallet**, since the wallet
+that created them is their mint authority — so a visitor can deposit devnet SOL, not USDC.
+
 ## Roles
 
 | Console | URL | Can do |
