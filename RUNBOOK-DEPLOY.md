@@ -175,6 +175,14 @@ console.log(getBase58Decoder().decode(k));
 Then Phantom → Add account → Import private key, paste, and clear the clipboard with
 `pbcopy < /dev/null`.
 
+**Importing does not select the account.** Phantom adds it to the list and keeps
+whatever was active before, which is how `Initialize platform` fails with
+`InvalidAuthority` while the right key sits imported and unused. After importing,
+click the account whose address starts with `CMNgjV` so it becomes active, then in the
+app click **Disconnect** and **Connect** again. The connection button should then read
+`Disconnect CMNgjV…VXrxF`. If it shows anything else, the app is still holding the
+previous account and no transaction will be signed by the authority.
+
 Two honest notes. This puts a real secret inside a browser extension; the key is
 devnet-only and governs a program holding no funds, and it must never be reused for
 anything that holds value. And the alternative avoids the secret entirely: run
