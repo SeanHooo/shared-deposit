@@ -15,12 +15,28 @@ longer pending deployment. What is pending is the recorded run, not the deployme
 | Upgrade authority | `CMNgjVqaaopNCZTsKBzD2zVxxQHMrFejNiaQW9iVXrxF` |
 | Platform initialized | yes, operator set to the upgrade authority, both mints six decimals |
 | Merchants registered | 2, `Bikes` and `Camping`, both enabled |
-| Test token supply | 0 — the guest has not been funded yet |
-| Fee budget for merchant wallets | 0 SOL on both, so the lock and return they sign would fail |
-| User activity | no passport, deposit account or rental lock exists yet |
+| Test token supply | 100 USDC and 100 USDT |
+| Guest test token balance | 100 USDC and 100 USDT, in two associated token accounts |
+| Fee budget for merchant wallets | 0.5 SOL each; the guest holds 5.49 SOL |
+| User activity | no passport, deposit account or rental lock exists yet, so the customer loop is still unproven against devnet |
 
 Read with `node scripts/demo-status.mjs`, which sends no transaction and reads no
 private key. Addresses and PDA derivations are recorded in [DEPLOYMENT.md](DEPLOYMENT.md).
+
+The setup transactions are auditable from the guest wallet's history, which is the
+same wallet that created both mints and therefore holds their mint authority:
+
+| Transaction | Instructions |
+| --- | --- |
+| `4jQgW5s96sk8…`, `27z2LaxEkEG5…` | `createAccount` + `initializeMint2`, so the mint authority is the guest wallet rather than the platform operator |
+| `4KdJKQHinxMh…` | `system.transfer`, 0.5 SOL from the authority to the guest |
+| `65FUdgmNgrTJ…` | `ata.create` + `token.mintTo`, 100 USDC |
+| `3iGiWKMHBW3v…` | `ata.create` + `token.mintTo`, 100 USDT |
+
+Because the test mints record an authority that is not the platform operator, the
+send-test-tokens buttons are enabled by reading that authority from the mint rather
+than by testing for the operator. The two differ on this deployment, and gating on
+the operator made funding the guest impossible from the interface.
 
 
 | Check | Evidence |
@@ -28,7 +44,7 @@ private key. Addresses and PDA derivations are recorded in [DEPLOYMENT.md](DEPLO
 | Anchor/SBF build | `bash scripts/build.sh` passed; SBF tools v1.57 and generated IDL |
 | Typed client generation | `npm run generate` passed; Codama generated from that IDL |
 | Frontend production build | `npm run build` passed |
-| Program and input checks | `npm test`: 27 tests passed across 5 files, including 7 grouped real-SBF scenarios |
+| Program and input checks | `npm test`: 32 tests passed across 5 files, including 7 grouped real-SBF scenarios |
 | Browser product flow | `npm run test:e2e`: 3 tests passed — the full Wallet Standard flow, plus console deep links and wallet-based landing consoles |
 | Default devnet page | Browser reads actual devnet, correctly reports not deployed; no page errors |
 
@@ -67,11 +83,13 @@ in the README.
 
 ## Remaining external steps
 
-1. `Fund devnet test assets` to the guest wallet. Both mints report supply 0.
-2. Fund the guest, `Bikes` and `Camping` with 0.5 devnet SOL each from the authority
-   wallet. Each role pays its own fee, and a zero balance fails as a simulation
-   error rather than as a funding problem.
-3. Run the whole loop once without recording, then record it.
+The deployment, the platform, both merchants and the guest funding are complete. What
+remains is the customer loop and the recording:
+
+1. Run the whole loop once without recording, then record it.
+
+A merchant is a keypair the operator registers and never a wallet that holds guest
+funds, so the merchant consoles only need enough SOL to pay their own network fee.
 
 Photo hosting remains merchant-provided. Chain state records survive refresh;
 older transaction logs depend on the RPC provider's retention. There is no
