@@ -1,14 +1,48 @@
-# Devnet deployment review
+# Devnet deployment record
 
-Prepared 2026-10-11. No deployment transaction has been sent.
+Prepared 2026-10-11, deployed and initialized 2026-10-12 on Solana devnet.
+
+## Deployed state, read back from the chain
+
+Every value below was read from devnet, not typed from memory. The two mint addresses
+matter most: their keypairs were generated in the browser and discarded, so these
+strings are the only remaining handle on those accounts.
+
+| Account | Address |
+| --- | --- |
+| Program | `Bw5pP788g5eK117b7oA1dzSMg4N5ZG5vjcHpEKTzzN2o` |
+| Upgrade authority | `CMNgjVqaaopNCZTsKBzD2zVxxQHMrFejNiaQW9iVXrxF` |
+| ProgramData, seeds `[program_id]` under the upgradeable loader, bump 250 | `DNLy1eDh7ewSePKnnqpmWPikYA4XsM14f33Tf9hWYJVr` |
+| Platform PDA, seeds `["platform"]`, bump 253 | `8Ui9JsxfnsnU8FW8ixGExn75ddJNwvJUmFuZ89jsSfdY` |
+| `Platform.operator` | `CMNgjVqaaopNCZTsKBzD2zVxxQHMrFejNiaQW9iVXrxF` |
+| USDC test mint, decimals 6 | `5nhW64j6aE93mNUErsKReqNuVm7W62PTVz91WDosnTPo` |
+| USDT test mint, decimals 6 | `r8AVDLFzWjeMXu9JXKKcnDsghuD4WK7Xs2xdPmg5VsC` |
+| Merchant `Bikes`, PDA bump 250 | `BJ6xikwy1dn7JS8CvSBNwpmqGrrKrPY1PwpoihXtnSpT` |
+| Merchant `Bikes`, wallet | `GASM7JmhynusMchjhWjRG6yjtQ9vknQszqgFwsKDVeV6` |
+| Merchant `Camping`, PDA bump 254 | `HQYpHVXdg74KVnzsd8ximkPM7oWG6FKpB7cCuBzW8nsB` |
+| Merchant `Camping`, wallet | `2sCWB4oaoqoy11w15oQJdv2QBqLWbwfK6fDZD5xzvBXL` |
+
+The operator is the upgrade authority, which is what the program is written to expect:
+`initialize_platform` sets `Platform.operator` to whoever signs that one transaction, and
+that signature was the deploy wallet.
+
+All four PDA derivations above were recomputed with `getProgramDerivedAddress` and match
+the on-chain accounts, including the bumps. The merchant seeds are `[b"merchant", <wallet>]`
+with no discriminant of their own, which is what makes a merchant's wallet its identity and
+limits a wallet to one merchant.
+
+One read-only command reproduces this whole section:
+
+```bash
+node scripts/demo-status.mjs
+```
 
 | Field | Prepared value |
 | --- | --- |
 | Network | Solana devnet |
 | Program | `Bw5pP788g5eK117b7oA1dzSMg4N5ZG5vjcHpEKTzzN2o` |
 | Configured CLI payer / initial upgrade authority | `CMNgjVqaaopNCZTsKBzD2zVxxQHMrFejNiaQW9iVXrxF` |
-| Read-only balance check | 2.27559592 devnet SOL remaining after the deploy |
-| Read-only program check | Deployed and executable |
+| Read-only balance check | 2.27559592 devnet SOL remaining after the deploy || Read-only program check | Deployed and executable |
 | SBF artifact | `target/deploy/shared_deposit_passport.so`, 506,456 bytes |
 | SHA-256 | `4acb20377c71624e2985c81a36bb099a643f938ca0808fccbd9b9bfc05c39841` |
 | ProgramData rent at current size | 2.57367532 devnet SOL, measured from the cluster rather than assumed |
@@ -44,7 +78,7 @@ Read-only repeatable check:
 node scripts/deployment-check.mjs CMNgjVqaaopNCZTsKBzD2zVxxQHMrFejNiaQW9iVXrxF
 ```
 
-Prepared deploy command, to be executed after funding and transaction approval:
+The deploy command that was used:
 
 ```bash
 export PATH="${HOME}/.local/share/solana/install/active_release/bin:${PATH}"
@@ -64,12 +98,20 @@ and registering merchants. Browser transactions are simulated and reviewed befor
 wallet signing. The connected deployment authority wallet must match the authority
 used for deployment; supply only public addresses when choosing a different wallet.
 
-Final devnet acceptance:
+Final devnet acceptance. State as of 2026-10-12, read from the chain rather than
+remembered, with the pending items named:
 
-- [ ] Program deployed and executable at the expected address.
-- [ ] Two distinct six-decimal test mints and platform initialized.
-- [ ] Guest funded and two merchant wallets registered.
+- [x] Program deployed and executable at the expected address.
+- [x] Two distinct six-decimal test mints and platform initialized, with the operator
+      set to the upgrade authority.
+- [x] Two merchant wallets registered and enabled, `Bikes` and `Camping`.
+- [ ] Guest funded with test tokens. Both test mints report a supply of 0, so the
+      `Fund devnet test assets` step has not run yet.
+- [ ] Every role wallet funded with devnet SOL. `Bikes` and `Camping` hold 0, and a
+      wallet with no SOL cannot pay for the lock or the return it has to sign. The
+      failure looks like a simulation error rather than a funding problem.
 - [ ] Each asset: deposit → authorize → merchant accept → normal return → withdraw.
+      No passport, deposit account or rental lock exists yet, so the loop has not run.
 - [ ] Same asset reused at the second merchant without redepositing.
 - [ ] Damage/missing → freeze → original merchant compensation → release.
 - [ ] Refresh, wallet switch, revoke and duplicate/permission rejection verified.

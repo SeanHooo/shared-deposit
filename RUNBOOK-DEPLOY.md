@@ -231,6 +231,19 @@ addresses into the platform account and the program rejects any mint that is not
 
 ### Sanity check before recording
 
+One read-only command reads the whole setup back from the chain, so nothing here has
+to be remembered. It sends no transaction and reads no private key:
+
+```bash
+node scripts/demo-status.mjs guest=<guest> bikes=<bikes> camping=<camping>
+```
+
+It prints the platform's operator and both mints, each merchant by name and address,
+every wallet's SOL balance against the fee budget it needs, the test token balances,
+and a list of what is still missing. It derives the Anchor discriminators from
+`sha256("account:<Name>")` rather than carrying them, so it cannot drift from the
+program.
+
 - `solana balance --url "$RPC"` should read about **2.574 SOL less than you funded**:
   the deploy locks one rent (2.57367532 SOL) in the ProgramData account plus roughly
   0.0007 SOL of signature fees, and it returns nothing, because the buffer lamports

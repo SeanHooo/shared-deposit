@@ -215,6 +215,15 @@ npm run test:e2e
 npm run dev -- --host 127.0.0.1
 ```
 
+Against a live deployment, one read-only command reports what the browser setup has
+completed and what is left, reading it from the chain rather than from memory. It
+sends no transaction and reads no private key:
+
+```bash
+node scripts/demo-status.mjs                                    # program, platform, merchants
+node scripts/demo-status.mjs guest=<ADDR> bikes=<ADDR> camping=<ADDR>   # plus SOL and token balances
+```
+
 Integration tests use the real compiled SBF program, actual synthetic signatures,
 SPL transfers and time travel in offline Surfpool. Browser tests launch their own
 local RPC and Vite server, register synthetic Wallet Standard wallets and exercise
