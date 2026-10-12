@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect, type Page } from "@playwright/test";
 import { createHash } from "node:crypto";
 import * as p from "../src/program";
 import { loadSnapshot, makeRpc } from "../src/chain";
@@ -254,4 +254,63 @@ test("all product roles use real signed chain transactions and reload recovery",
       (r) => r.data.status === 0 || r.data.status === 2,
     ),
   ).toHaveLength(0);
+});
+
+/*
+ * Routing tests.
+ *
+ * Each console owns one unique heading, so "the right console rendered" is a
+ * checkable claim rather than a screenshot. The tests below run after the flow
+ * above, in declaration order (workers: 1), and the wallet-landing case relies
+ * on the merchants that flow registered.
+ */
+const CONSOLE_HEADINGS: Record<string, string> = {
+  guest: "My deposit sub-accounts",
+  merchant: "Return evidence",
+  operator: "Platform and merchant management",
+  keeper: "Rentals past 180 days",
+};
+const heading = (page: Page, text: string) =>
+  page.getByRole("heading", { name: text, exact: true });
+
+test("each console has its own deep link, and only that console renders", async ({
+  page,
+}) => {
+  await installWallets(page, h.people);
+  for (const [role, text] of Object.entries(CONSOLE_HEADINGS)) {
+    await page.goto(`${UI}#/${role}`);
+    await expect(heading(page, text)).toBeVisible();
+    for (const [other, otherText] of Object.entries(CONSOLE_HEADINGS)) {
+      if (other !== role) await expect(heading(page, otherText)).toHaveCount(0);
+    }
+    // The console in view is stated in the address bar, not just implied by the
+    // active tab, so a link taken from a video description reproduces the view.
+    await expect(page.locator(".hero-band .route")).toHaveText(`#/${role}`);
+    await page.reload();
+    await expect(page).toHaveURL(`${UI}#/${role}`);
+    await expect(heading(page, text)).toBeVisible();
+  }
+  // A bare link lands on the end user's console rather than an empty shell.
+  await page.goto(UI);
+  await expect(page).toHaveURL(`${UI}#/guest`);
+  await expect(heading(page, CONSOLE_HEADINGS.guest)).toBeVisible();
+});
+
+test("the connected wallet chooses the landing console", async ({ page }) => {
+  await installWallets(page, h.people);
+  await page.goto(UI);
+  await expect(page).toHaveURL(`${UI}#/guest`);
+  // Bikes is a registered merchant, so the merchant console is the better guess.
+  await loginAs(page, "Bikes");
+  await expect(page).toHaveURL(`${UI}#/merchant`);
+  await expect(heading(page, CONSOLE_HEADINGS.merchant)).toBeVisible();
+  // The operator wallet is the platform authority.
+  await loginAs(page, "Operator");
+  await expect(page).toHaveURL(`${UI}#/operator`);
+  // A console the user opened by hand outranks the guess, and survives reload.
+  await openConsole(page, "Keeper");
+  await expect(page).toHaveURL(`${UI}#/keeper`);
+  await page.reload();
+  await expect(page).toHaveURL(`${UI}#/keeper`);
+  await expect(heading(page, CONSOLE_HEADINGS.keeper)).toBeVisible();
 });

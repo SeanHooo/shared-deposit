@@ -24,6 +24,7 @@ h2 { margin-bottom: 0; font-size: 20px; letter-spacing: -.01em; }
 .button.secondary { background: #18232a; border-color: #30424c; }
 .button.secondary:hover:not(:disabled) { border-color: #6a8592; }
 .hero-band { display: flex; justify-content: space-between; gap: 20px; margin: 40px 0 20px; padding: 15px 0; border-top: 1px solid #25343c; border-bottom: 1px solid #25343c; color: #a9bbc3; font-size: 13px; }
+.hero-band .route { color: #58b89d; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
 .hero-band p { margin: 0; max-width: 70%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .role-tabs { display: flex; gap: 8px; margin: 0 0 18px; border-bottom: 1px solid #263640; }
 .role { border: 0; border-bottom: 2px solid transparent; padding: 11px 13px; color: #8ca0aa; background: transparent; font-weight: 750; }

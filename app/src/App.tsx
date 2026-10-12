@@ -29,6 +29,14 @@ import {
   resolvePending,
   submitTransaction,
 } from "./transactions";
+import {
+  DEFAULT_ROLE,
+  ROLES,
+  roleFromHash,
+  roleHash,
+  roleLabel,
+  type Role,
+} from "./routes";
 const rpc = makeRpc(RPC_URL);
 const statusNames = [
   "Active",
@@ -66,7 +74,9 @@ export function App() {
     who = connected?.signer;
   const [state, setState] = useState<Snapshot>(emptySnapshot),
     [fresh, setFresh] = useState(false);
-  const [role, setRole] = useState("guest"),
+  const [role, setRoleState] = useState<Role>(
+      () => roleFromHash(location.hash) ?? DEFAULT_ROLE,
+    ),
     [asset, setAsset] = useState<p.Asset>("SOL");
   const [amount, setAmount] = useState("0.1"),
     [merchant, setMerchant] = useState(""),
@@ -87,6 +97,53 @@ export function App() {
   const [testRecipient, setTestRecipient] = useState(""),
     [testAmount, setTestAmount] = useState("100");
   const activeAction = useRef(false);
+  /*
+   * Switching consoles by any route — tab click, back button, edited URL or the
+   * wallet guess below — drops the previous console's activity list. Otherwise
+   * one role's records stay on screen under another role's heading.
+   */
+  const applyRole = useCallback((next: Role) => {
+    historyQuery.current++;
+    setHistory([]);
+    setCursor(null);
+    setRoleState(next);
+  }, []);
+  /*
+   * Explicit navigation outranks the wallet-based guess below. Pinned on mount
+   * too, so reloading a bookmarked console does not re-guess and jump away.
+   */
+  const pinnedRole = useRef(roleFromHash(location.hash) !== null);
+  const setRole = useCallback(
+    (next: Role) => {
+      pinnedRole.current = true;
+      applyRole(next);
+      // pushState does not fire hashchange, so there is no feedback loop here.
+      if (roleFromHash(location.hash) !== next) {
+        window.history.pushState(null, "", roleHash(next));
+      }
+    },
+    [applyRole],
+  );
+  // Normalize the address bar once, without pushing a history entry, so a link
+  // copied at any point reproduces the console it was copied from.
+  useEffect(() => {
+    if (roleFromHash(location.hash) !== role) {
+      window.history.replaceState(null, "", roleHash(role));
+    }
+  }, [role]);
+  useEffect(() => {
+    const sync = () => {
+      pinnedRole.current = true;
+      applyRole(roleFromHash(location.hash) ?? DEFAULT_ROLE);
+    };
+    // Only real user navigation reaches these: back, forward, or an edited URL.
+    addEventListener("hashchange", sync);
+    addEventListener("popstate", sync);
+    return () => {
+      removeEventListener("hashchange", sync);
+      removeEventListener("popstate", sync);
+    };
+  }, [applyRole]);
   const refresh = useCallback(async () => {
     const generation = epoch.current;
     try {
@@ -131,6 +188,25 @@ export function App() {
     isOperator = platform?.operator === owner;
   const blocked =
     busy || !who || !fresh || !state.deployed || !!pendingTransaction();
+  /*
+   * The wallet decides which console a first-time visitor lands on: the platform
+   * authority gets the operations console, a registered merchant gets the
+   * merchant console, everyone else gets the guest console. Replacing rather
+   * than pushing means Back leaves the site instead of bouncing between two
+   * consoles the user never chose. Declared after ownMerchant and isOperator
+   * because the dependency array is read during render, not in the callback.
+   */
+  useEffect(() => {
+    if (pinnedRole.current || !owner || !fresh) return;
+    const guess: Role = isOperator
+      ? "operator"
+      : ownMerchant
+        ? "merchant"
+        : DEFAULT_ROLE;
+    if (guess === role) return;
+    applyRole(guess);
+    window.history.replaceState(null, "", roleHash(guess));
+  }, [owner, fresh, isOperator, ownMerchant, role, applyRole]);
   async function act(
     summary: string | (() => string),
     build: () => Promise<Instruction[]>,
@@ -356,10 +432,10 @@ export function App() {
             : "On-chain state unconfirmed"}
         </span>
         <span>{owner ?? "No wallet connected"}</span>
+        <code className="route">{roleHash(role)}</code>
         <button onClick={() => void refresh()} disabled={busy}>
           Refresh
-        </button>
-      </section>
+        </button>      </section>
       <div className="panel notice-panel" role="status">
         <p>{notice}</p>
         {!state.deployed && fresh && (
@@ -391,23 +467,13 @@ export function App() {
         )}
       </div>
       <nav className="role-tabs">
-        {[
-          ["guest", "Guest"],
-          ["merchant", "Merchant"],
-          ["operator", "Operator"],
-          ["keeper", "Keeper"],
-        ].map(([key, label]) => (
+        {ROLES.map((key) => (
           <button
             key={key}
             className={`role ${role === key ? "active" : ""}`}
-            onClick={() => {
-              historyQuery.current++;
-              setRole(key);
-              setHistory([]);
-              setCursor(null);
-            }}
+            onClick={() => setRole(key)}
           >
-            {label}
+            {roleLabel(key)}
           </button>
         ))}
       </nav>
