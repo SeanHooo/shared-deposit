@@ -65,7 +65,7 @@ click misbehaves on camera.
 | 4 | 0:55–1:15 | Switch Phantom to `Bikes`. **Merchant** console. Click **Accept and lock deposit** | **"Only the merchant the guest named can act on it. The lock is the only point where funds move — from available to locked, inside the same passport."** |
 | 5 | 1:15–1:35 | Still `Bikes`. **Return evidence**: paste an HTTPS photo URL, choose a file, hash appears. Click **Return in good condition** | **"Return evidence: the file's SHA-256 is computed in the browser. Nothing is uploaded — the chain stores the hash and the reference."** |
 | 6 | 1:35–1:55 | Switch to `Guest`. Guest console. Point at the balance: **20 USDC Available** | **"Deposit released, back to the guest's passport. Not to a merchant, not pending a refund."** |
-| 7 | **1:55–2:20** | → merchant `Camping`, item `tent-7`, amount 5, click **Confirm single-use authorization** → switch to `Camping` → **Accept and lock deposit** → **Return in good condition** | **THE MONEY SHOT.** **"Same 20 USDC. Second merchant. No second deposit."** Add a lower-third: `0 USDC re-deposited`. Then switch back to `Guest` and hold on the balance |
+| 7 | **1:55–2:20** | → merchant `Camping`, item `tent-7`, amount 5, click **Confirm single-use authorization** → switch to `Camping` → **Accept and lock deposit** → paste the same evidence URL as shot 5 → **Return in good condition** | **THE MONEY SHOT.** **"Same 20 USDC. Second merchant. No second deposit."** Add a lower-third: `0 USDC re-deposited`. Then switch back to `Guest` and hold on the balance |
 | 8 | 2:20–2:35 | `Guest`. Click **Withdraw to wallet** | **"The guest withdraws whatever is not locked — one asset can be withdrawn while another is still locked behind a rental."** |
 | 9 | 2:35–2:50 | Cut to `app/e2e/product.spec.ts`, `app/e2e/harness.ts` and `VERIFICATION.md` in an editor, then a still frame of the e2e run | **"This is not a happy-path prototype. Real SBF integration tests cover foreign mints, wrong signers, replayed nonces, revoked and expired authorizations, concurrent locks, and duplicate transitions. The 180-day keeper release is proven by time travel, not by waiting."** The stills in `docs/screenshots/` are captured by that same run |
 | 10 | 2:50–3:00 | Title card: problem / solution / program address / repo | **"Shared Deposit Passport. Pay a deposit once. Rent from every merchant."** |
@@ -109,6 +109,11 @@ Say these plainly. They cost you nothing and buy credibility:
   change in the shot list therefore means **switch the Phantom account, then click
   the console tab**. Two deliberate clicks, not one hopeful wait.
 - Do not use a screen recording with system notifications enabled.
+- Do not narrate an item ID other than the one on screen. `bike-42` and `tent-7` are
+  arbitrary strings, so any value works — but a judgment call made live, out loud, is one
+  more thing that can disagree with the screen. The rehearsal's Camping return left the
+  evidence reference empty, which the program permits; the recording should paste the URL
+  from shot 5 instead, so the two returns look alike.
 - Do not exceed 3:00. Colosseum submissions are skimmed first; a 3-minute cut that
   lands three points beats a 7-minute tour.
 
