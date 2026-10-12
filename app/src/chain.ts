@@ -1,5 +1,6 @@
 import {
   createSolanaRpc,
+  getAddressDecoder,
   getBase64Encoder,
   type Address,
   type Decoder,
@@ -142,8 +143,42 @@ export async function loadSnapshot(rpc: PassportRpc): Promise<Snapshot> {
   }
   return snapshot;
 }
-export type HistoryRow = sdk.PassportEventEvent & { signature: string };
-export async function loadHistory(
+/**
+ * The upgrade authority recorded in a program's ProgramData account.
+ *
+ * The account data is a 4-byte state discriminant, an 8-byte slot, then an
+ * Option<Pubkey>: a tag byte, and 32 bytes of authority when that tag is 1. Returning
+ * null means the account is absent or the authority was revoked, which is what makes a
+ * program immutable. These are the same offsets the end-to-end harness patches, and the
+ * only place this program reads the value is the initializePlatform constraint.
+ */
+export function upgradeAuthority(data: Uint8Array): Address | null {
+  if (data.length < 45 || data[12] !== 1) return null;
+  return getAddressDecoder().decode(data.subarray(13, 45));
+}
+
+/**
+ * Read that authority back from the chain. Both constraints in initializePlatform
+ * report the same error code, InvalidAuthority, so the only way to tell "the connected
+ * wallet is wrong" from "the ProgramData account is wrong" is to compare the chain's
+ * answer against the wallet.
+ */
+export async function loadUpgradeAuthority(
+  rpc: PassportRpc,
+): Promise<Address | null> {
+  const info = await rpc
+    .getAccountInfo(await sdk.programDataAddress(), {
+      encoding: "base64",
+      commitment: "confirmed",
+    })
+    .send();
+  if (!info.value || info.value.owner !== sdk.LOADER) return null;
+  return upgradeAuthority(
+    new Uint8Array(getBase64Encoder().encode(info.value.data[0])),
+  );
+}
+
+export type HistoryRow = sdk.PassportEventEvent & { signature: string };export async function loadHistory(
   rpc: PassportRpc,
   account: Address,
   before?: string,

@@ -19,6 +19,7 @@ import {
   emptySnapshot,
   loadHistory,
   loadSnapshot,
+  loadUpgradeAuthority,
   makeRpc,
   type HistoryRow,
   type Row,
@@ -218,6 +219,42 @@ export function App() {
     applyRole(guess);
     window.history.replaceState(null, "", roleHash(guess));
   }, [owner, fresh, isOperator, ownMerchant, role, applyRole]);
+  /**
+   * The InvalidAuthority message names the account that rejected the constraint but not
+   * which side of the comparison was wrong, because answering that needs a read the
+   * error does not carry: the program's upgrade authority. Fetching it turns one opaque
+   * failure into either "select this account in your wallet" or "you imported the wrong
+   * keypair".
+   */
+  async function explain(error: unknown): Promise<string> {
+    const text = describeError(error);
+    if (!text.includes("InvalidAuthority")) return text;
+    let authority: string | null;
+    try {
+      authority = await loadUpgradeAuthority(rpc);
+    } catch {
+      // Never replace a real failure with a failed diagnosis.
+      return text;
+    }
+    const lines = [
+      text,
+      "",
+      "Diagnosis: the signing wallet is not the program's upgrade authority.",
+      `  Connected wallet : ${owner ?? "not connected"}`,
+      `  Upgrade authority: ${authority ?? "none, so the program is immutable"}`,
+      `  ProgramData      : ${await p.programDataAddress()}`,
+    ];
+    if (authority !== null && authority === owner) {
+      lines.push(
+        "Those two match, so this rejection came from somewhere else. The program logs above name the account and the constraint.",
+      );
+    } else if (authority !== null) {
+      lines.push(
+        "Select that account in Phantom, then click Disconnect and Connect again. Importing a keypair does not make it the active account, and the extension exposes every account it holds as one wallet named Phantom, so refreshing the page alone keeps serving the previous account.",
+      );
+    }
+    return lines.join("\n");
+  }
   async function act(
     summary: string | (() => string),
     build: () => Promise<Instruction[]>,
@@ -239,7 +276,7 @@ export function App() {
       if (result.startsWith("Confirmed on chain")) confirmed?.();
     } catch (error) {
       setNotice(
-        `${describeError(error)}${pendingTransaction() ? " A transaction signature is saved; check its result first." : ""}`,
+        `${await explain(error)}${pendingTransaction() ? " A transaction signature is saved; check its result first." : ""}`,
       );
     } finally {
       await refresh();
