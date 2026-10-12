@@ -1,0 +1,12 @@
+node_modules/
+app/node_modules/
+app/dist/
+app/*.local
+app/.env
+*.tsbuildinfo
+target/
+anchor-test-ledger/
+.anchor/
+*.keypair.json
+app/test-results/
+app/playwright-report/

@@ -1,0 +1,18 @@
+[toolchain]
+
+[features]
+resolution = true
+skip-lint = false
+
+[programs.devnet]
+shared_deposit_passport = "Bw5pP788g5eK117b7oA1dzSMg4N5ZG5vjcHpEKTzzN2o"
+
+[registry]
+url = "https://api.apr.dev"
+
+[provider]
+cluster = "devnet"
+wallet = "~/.config/solana/id.json"
+
+[scripts]
+test = "npm --prefix app test"

@@ -1,0 +1,42 @@
+{
+  "name": "shared-deposit-passport-app",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview",
+    "generate": "node scripts/generate-client.mjs",
+    "test": "vitest run tests/*.test.ts",
+    "test:e2e": "NODE_OPTIONS='--import tsx' playwright test"
+  },
+  "dependencies": {
+    "@solana-program/system": "^0.15.0",
+    "@solana-program/token": "^0.17.0",
+    "@solana/instructions": "^8.4.0",
+    "@solana/kit": "^8.4.0",
+    "@solana/kit-plugin-rpc": "^0.19.0",
+    "@solana/kit-plugin-signer": "^0.19.0",
+    "@solana/kit-plugin-wallet": "^0.21.0",
+    "@solana/program-client-core": "^8.4.0",
+    "@solana/react": "^8.4.0",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0"
+  },
+  "devDependencies": {
+    "@codama/nodes-from-anchor": "^1.5.6",
+    "@codama/renderers-js": "^2.5.0",
+    "@playwright/test": "^1.64.0",
+    "@solana/surfpool": "^1.6.1",
+    "@types/node": "^26.6.5",
+    "@types/react": "^19.1.8",
+    "@types/react-dom": "^19.1.6",
+    "@vitejs/plugin-react": "^6.1.2",
+    "codama": "^1.11.0",
+    "tsx": "^4.23.15",
+    "typescript": "^5.8.3",
+    "vite": "^8.3.3",
+    "vitest": "^4.1.11"
+  }
+}
