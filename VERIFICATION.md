@@ -18,7 +18,7 @@ longer pending deployment. What is pending is the recorded run, not the deployme
 | Test token supply | 100 USDC and 100 USDT |
 | Guest test token balance | 100 USDC and 100 USDT, in two associated token accounts |
 | Fee budget for merchant wallets | 0.5 SOL each; the guest holds 5.49 SOL |
-| User activity | no passport, deposit account or rental lock exists yet, so the customer loop is still unproven against devnet |
+| User activity | one passport with two consumed authorizations and two returned rental locks: the loop has run once against devnet |
 
 Read with `node scripts/demo-status.mjs`, which sends no transaction and reads no
 private key. Addresses and PDA derivations are recorded in [DEPLOYMENT.md](DEPLOYMENT.md).
@@ -38,6 +38,30 @@ send-test-tokens buttons are enabled by reading that authority from the mint rat
 than by testing for the operator. The two differ on this deployment, and gating on
 the operator made funding the guest impossible from the interface.
 
+## The customer loop, rehearsed against devnet, 2026-10-12
+
+The full loop ran once without recording, driven entirely through the browser at
+`https://api.devnet.solana.com`. Run `npm run report:loop -- guest=<ADDRESS>` in `app/`
+to re-read every number below from the chain.
+
+| Check | Result |
+| --- | --- |
+| Deposit, and the three accounts it creates | one transaction carried `InitializePassport`, `InitializeSplAccount` and `DepositSpl` |
+| Guest deposit account | `available 20`, `locked 0`, `minimumReserve 1`, not frozen |
+| Rentals | 2, at two different merchants: `Bikes` for `bike-42` and `Camping` for `tent-4`, 5 USDC locked each |
+| Deposits made | one deposit account, holding the full amount that was deposited, so the second merchant was financed from the same passport with no second deposit |
+| Authorizations | 2, both `consumed true` and `active false`, so single use held |
+| Returns | both `Returned`, released at the same second they were returned, so the funds left the lock with no waiting period |
+| Evidence | `https://example.com/receipt.jpg` and a 32-byte SHA-256 recorded on the `Bikes` lock; the `Camping` return was recorded without evidence, which the program allows |
+| Where the money went | nothing locked, 20 available to the guest. No merchant holds it at any point |
+| Withdrawal | not part of this run, and the amount is still sitting in the guest's deposit account |
+
+What the rehearsal did not cover: the day the timer runs out. The 180-day keeper path
+cannot be exercised on devnet without waiting, which is why it stays a local test with
+time travel, and why the video says so.
+
+
+## Local results, from before the deployment
 
 | Check | Evidence |
 | --- | --- |
@@ -86,7 +110,8 @@ in the README.
 The deployment, the platform, both merchants and the guest funding are complete. What
 remains is the customer loop and the recording:
 
-1. Run the whole loop once without recording, then record it.
+1. Withdraw the 20 USDC that the rehearsal left available, then run the whole loop
+   again on camera. See [DEMO-SCRIPT.md](DEMO-SCRIPT.md).
 
 A merchant is a keypair the operator registers and never a wallet that holds guest
 funds, so the merchant consoles only need enough SOL to pay their own network fee.
