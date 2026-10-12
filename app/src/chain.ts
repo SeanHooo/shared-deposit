@@ -45,7 +45,9 @@ const accountSizes = new Map([
 export async function assertNetwork(rpc: PassportRpc, local: boolean) {
   const genesis = await rpc.getGenesisHash().send();
   if (!local && genesis !== DEVNET_GENESIS)
-    throw new Error("RPC 不是 Solana devnet，已阻止资金操作。");
+    throw new Error(
+      "RPC is not Solana devnet, so money operations are blocked.",
+    );
 }
 function matches(bytes: Uint8Array, discriminator: ReadonlyUint8Array) {
   return discriminator.every((value, i) => bytes[i] === value);
@@ -63,7 +65,7 @@ export function decodeChecked<T>(
       bytes.length !== accountSizes.get(discriminator.join(","))) ||
     !matches(bytes, discriminator)
   )
-    throw new Error("链上账户的 owner 或 discriminator 不匹配。");
+    throw new Error("On-chain account owner or discriminator mismatch.");
   return decoder.decode(bytes);
 }
 export async function loadSnapshot(rpc: PassportRpc): Promise<Snapshot> {
@@ -86,7 +88,8 @@ export async function loadSnapshot(rpc: PassportRpc): Promise<Snapshot> {
   snapshot.deployed = !!program.value?.executable;
   snapshot.slot = slot;
   const timestamp = await rpc.getBlockTime(slot).send();
-  if (timestamp === null) throw new Error('当前链上区块时间暂不可读取，请刷新。');
+  if (timestamp === null)
+    throw new Error("The current on-chain block time is not readable yet; refresh.");
   snapshot.timestamp = timestamp;
   for (const row of accounts) {
     const bytes = new Uint8Array(
@@ -94,7 +97,7 @@ export async function loadSnapshot(rpc: PassportRpc): Promise<Snapshot> {
     );
     const owner = row.account.owner;
     if (owner !== PROGRAM_ADDRESS)
-      throw new Error("RPC 返回了不属于本程序的账户。");
+      throw new Error("RPC returned an account that is not owned by this program.");
     const decode = <T>(
       discriminator: ReadonlyUint8Array,
       decoder: Decoder<T>,

@@ -38,7 +38,7 @@ export function pendingTransaction(): Pending | null {
 }
 export async function resolvePending(resend = false): Promise<string> {
   const pending = pendingTransaction();
-  if (!pending) return "没有待确认交易。";
+  if (!pending) return "No unresolved transaction.";
   const rpc = makeRpc(RPC_URL);
   await assertNetwork(rpc, LOCAL);
   const status = (
@@ -50,19 +50,19 @@ export async function resolvePending(resend = false): Promise<string> {
   ).value[0];
   if (status?.err) {
     localStorage.removeItem(storageKey);
-    throw new Error(`交易已失败：${JSON.stringify(status.err)}`);
+    throw new Error(`Transaction failed: ${JSON.stringify(status.err)}`);
   }
   if (
     status?.confirmationStatus === "confirmed" ||
     status?.confirmationStatus === "finalized"
   ) {
     localStorage.removeItem(storageKey);
-    return `链上已确认：${pending.signature}`;
+    return `Confirmed on chain: ${pending.signature}`;
   }
   const height = await rpc.getBlockHeight({ commitment: "finalized" }).send();
   if (!status && height > BigInt(pending.lastValidBlockHeight)) {
     localStorage.removeItem(storageKey);
-    return "交易已过期且链上未执行，可以重新发起。";
+    return "The transaction expired without executing, so it can be submitted again.";
   }
   if (resend)
     await rpc
@@ -72,7 +72,7 @@ export async function resolvePending(resend = false): Promise<string> {
         maxRetries: 2n,
       })
       .send();
-  return `结果待确认，请查询或重发同一笔交易：${pending.signature}`;
+  return `Result unresolved; check or resend the same transaction: ${pending.signature}`;
 }
 export async function submitTransaction(
   who: TransactionSigner,
@@ -82,10 +82,12 @@ export async function submitTransaction(
 ): Promise<string> {
   if (!isTransactionModifyingSigner(who) && !isTransactionPartialSigner(who))
     throw new Error(
-      "此钱包只支持签名并发送，无法安全保存待确认交易；请使用支持 signTransaction 的钱包。",
+      "This wallet only signs and sends, so an unresolved transaction cannot be stored safely. Use a wallet that supports signTransaction.",
     );
   if (pendingTransaction())
-    throw new Error("上一笔交易结果待确认，请先查询结果，避免重复操作。");
+    throw new Error(
+      "A previous transaction is unresolved. Check its result first to avoid a duplicate operation.",
+    );
   const rpc = makeRpc(RPC_URL);
   await assertNetwork(rpc, LOCAL);
   const client = createClient()
@@ -117,7 +119,7 @@ export async function submitTransaction(
     .send();
   if (simulation.value.err)
     throw new Error(
-      `模拟失败：${(simulation.value.logs ?? []).slice(-6).join("\n")}`,
+      `Simulation failed: ${(simulation.value.logs ?? []).slice(-6).join("\n")}`,
     );
   const fee = (
     await rpc
@@ -128,13 +130,16 @@ export async function submitTransaction(
       )
       .send()
   ).value;
-  if (fee === null) throw new Error("交易费用暂不可确认，请刷新后重试。");
+  if (fee === null)
+    throw new Error(
+      "The transaction fee cannot be confirmed yet; refresh and try again.",
+    );
   if (
     !window.confirm(
-      `${summary}\n网络：${LOCAL ? "Localnet" : "Solana devnet"}\n程序：${instructions.at(-1)?.programAddress}\n签名及手续费钱包：${who.address}\n模拟成功，消耗 ${simulation.value.unitsConsumed ?? "?"} CU。\n预计网络费：${formatAmount(fee, "SOL")} SOL。新账户还需租金，实际金额由钱包确认。\n确认后请求钱包签名。`,
+      `${summary}\nNetwork: ${LOCAL ? "Localnet" : "Solana devnet"}\nProgram: ${instructions.at(-1)?.programAddress}\nSigning and fee payer: ${who.address}\nSimulation succeeded, ${simulation.value.unitsConsumed ?? "?"} CU consumed.\nEstimated network fee: ${formatAmount(fee, "SOL")} SOL. New accounts also need rent; the wallet confirms the final amount.\nConfirm to request a wallet signature.`,
     )
   )
-    return "已取消，未签名或发送。";
+    return "Cancelled. Nothing was signed or sent.";
   const signed = await client.signTransaction(message, {
     abortSignal: AbortSignal.timeout(60000),
   });
@@ -161,5 +166,5 @@ export async function submitTransaction(
     if (!pendingTransaction()) return result;
     await new Promise((resolve) => setTimeout(resolve, 1000));
   }
-  return `已提交，结果待确认：${sig}`;
+  return `Submitted, result unresolved: ${sig}`;
 }

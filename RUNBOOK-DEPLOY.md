@@ -106,10 +106,10 @@ be reused for anything real.
    cd app
    VITE_SOLANA_RPC_URL=<your-working-devnet-rpc> npm run dev -- --host 127.0.0.1
    ```
-2. Connect the authority wallet. Open the **运营方** tab.
-3. `创建 USDC 测试 mint` → wait for 链上已确认. Repeat for `创建 USDT 测试 mint`.
-4. `初始化平台`.
-5. Open `发放 devnet 测试资产`, send ~100 USDC and ~100 USDT to the guest wallet
+2. Connect the authority wallet. Open the **Operator** tab.
+3. `Create USDC test mint` → wait for `Confirmed on chain`. Repeat for `Create USDT test mint`.
+4. `Initialize platform`.
+5. Open `Fund devnet test assets`, send ~100 USDC and ~100 USDT to the guest wallet
    you will demo with.
 6. Register two merchants (wallet public key + name). Use two more Phantom
    accounts: `Bikes` and `Camping`.

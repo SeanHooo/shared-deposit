@@ -164,11 +164,11 @@ async function installWallets(page: Page) {
   );
 }
 async function wallet(page: Page, name: string) {
-  const disconnect = page.getByRole("button", { name: /^断开/ });
+  const disconnect = page.getByRole("button", { name: /^Disconnect/ });
   if (await disconnect.count()) await disconnect.click();
-  await page.getByRole("button", { name: `连接 ${name}`, exact: true }).click();
-  await expect(page.getByRole("button", { name: /^断开/ })).toBeVisible();
-  await expect(page.getByText(/链上已同步/)).toBeVisible();
+  await page.getByRole("button", { name: `Connect ${name}`, exact: true }).click();
+  await expect(page.getByRole("button", { name: /^Disconnect/ })).toBeVisible();
+  await expect(page.getByText(/On-chain state synced/)).toBeVisible();
 }
 async function transact(
   page: Page,
@@ -176,21 +176,21 @@ async function transact(
   root = page as Page | ReturnType<Page["locator"]>,
 ) {
   await root.getByRole("button", { name: label, exact: true }).click();
-  await expect(page.getByRole("status")).toContainText("链上已确认", {
+  await expect(page.getByRole("status")).toContainText("Confirmed on chain", {
     timeout: 20000,
   });
 }
 async function auth(page: Page, asset: string, id: string, amount: string) {
   await page
-    .getByRole("button", { name: new RegExp(`^${asset}.*可用`) })
+    .getByRole("button", { name: new RegExp(`^${asset}.*Available`) })
     .click();
-  await page.getByLabel(`金额（${asset}）`).fill(amount);
-  await page.getByLabel("合作商户").selectOption({
+  await page.getByLabel(`Amount (${asset})`).fill(amount);
+  await page.getByLabel("Merchant").selectOption({
     label: `Bikes · ${people.Bikes.address.slice(0, 6)}…${people.Bikes.address.slice(-5)}`,
   });
-  await page.getByLabel("物品 ID").fill(id);
-  await page.getByLabel("约定归还时间").fill("2030-10-12T12:00");
-  await transact(page, "确认单次授权，等待商户接受");
+  await page.getByLabel("Item ID").fill(id);
+  await page.getByLabel("Agreed return time").fill("2030-10-12T12:00");
+  await transact(page, "Confirm single-use authorization");
 }
 test("all product roles use real signed chain transactions and reload recovery", async ({
   page,
@@ -207,39 +207,39 @@ test("all product roles use real signed chain transactions and reload recovery",
   });
   await page.goto(ui);
   await wallet(page, "Operator");
-  await page.getByRole("button", { name: "运营方", exact: true }).click();
-  await transact(page, "创建 USDC 测试 mint");
-  await expect(page.getByLabel("USDC 测试 mint")).not.toHaveValue("");
-  await transact(page, "创建 USDT 测试 mint");
-  await expect(page.getByLabel("USDT 测试 mint")).not.toHaveValue("");
-  await transact(page, "初始化平台");
-  await page.getByText("发放 devnet 测试资产", { exact: true }).click();
-  await page.getByLabel("测试币接收钱包").fill(people.Guest.address);
-  await page.getByLabel("测试币金额").fill("100");
-  await transact(page, "发放 USDC 测试币");
-  await transact(page, "发放 USDT 测试币");
+  await page.getByRole("button", { name: "Operator", exact: true }).click();
+  await transact(page, "Create USDC test mint");
+  await expect(page.getByLabel("USDC test mint")).not.toHaveValue("");
+  await transact(page, "Create USDT test mint");
+  await expect(page.getByLabel("USDT test mint")).not.toHaveValue("");
+  await transact(page, "Initialize platform");
+  await page.getByText("Fund devnet test assets", { exact: true }).click();
+  await page.getByLabel("Test token recipient").fill(people.Guest.address);
+  await page.getByLabel("Test token amount").fill("100");
+  await transact(page, "Send USDC test tokens");
+  await transact(page, "Send USDT test tokens");
   for (const name of ["Bikes", "Camping"]) {
-    await page.getByLabel("商户钱包地址").fill(people[name].address);
-    await page.getByLabel("商户名称").fill(name);
-    await transact(page, "登记合作商户");
+    await page.getByLabel("Merchant wallet address").fill(people[name].address);
+    await page.getByLabel("Merchant name").fill(name);
+    await transact(page, "Register merchant");
   }
-  const shop = page.locator("article").filter({ hasText: "Bikes · 已启用" });
-  await transact(page, "暂停新租借", shop);
+  const shop = page.locator("article").filter({ hasText: "Bikes · Enabled" });
+  await transact(page, "Pause new rentals", shop);
   await transact(
     page,
-    "恢复新租借",
-    page.locator("article").filter({ hasText: "Bikes · 已暂停" }),
+    "Resume new rentals",
+    page.locator("article").filter({ hasText: "Bikes · Paused" }),
   );
   await wallet(page, "Guest");
-  await page.getByRole("button", { name: "游客", exact: true }).click();
+  await page.getByRole("button", { name: "Guest", exact: true }).click();
   for (const asset of ["SOL", "USDC", "USDT"]) {
     await page
-      .getByRole("button", { name: new RegExp(`^${asset}.*可用`) })
+      .getByRole("button", { name: new RegExp(`^${asset}.*Available`) })
       .click();
     await page
-      .getByLabel(`金额（${asset}）`)
+      .getByLabel(`Amount (${asset})`)
       .fill(asset === "SOL" ? "0.1" : "20");
-    await transact(page, "存入");
+    await transact(page, "Deposit");
   }
   for (const [asset, amount] of [
     ["SOL", "0.02"],
@@ -249,14 +249,14 @@ test("all product roles use real signed chain transactions and reload recovery",
     const id = `normal-${asset}`;
     await auth(page, asset, id, amount);
     await wallet(page, "Bikes");
-    await page.getByRole("button", { name: "商户", exact: true }).click();
+    await page.getByRole("button", { name: "Merchant", exact: true }).click();
     await transact(
       page,
-      "接受并锁定押金",
+      "Accept and lock deposit",
       page
         .locator("article")
         .filter({ hasText: id })
-        .filter({ hasText: "待商户接受" }),
+        .filter({ hasText: "Awaiting merchant" }),
     );
     if (asset === "SOL") {
       const contents = Buffer.from(
@@ -264,9 +264,9 @@ test("all product roles use real signed chain transactions and reload recovery",
         "base64",
       );
       await page
-        .getByLabel("照片 HTTPS 地址（可选）")
+        .getByLabel("Photo HTTPS URL (optional)")
         .fill("https://example.com/return.png");
-      await page.getByLabel("选择照片，计算实际文件 SHA-256").setInputFiles({
+      await page.getByLabel("Choose a photo to hash its actual file contents").setInputFiles({
         name: "return.png",
         mimeType: "image/png",
         buffer: contents,
@@ -279,92 +279,92 @@ test("all product roles use real signed chain transactions and reload recovery",
     }
     await transact(
       page,
-      "正常归还",
+      "Return in good condition",
       page
         .locator("article")
         .filter({ hasText: id })
-        .filter({ hasText: "租借中" }),
+        .filter({ hasText: "Active" }),
     );
     await wallet(page, "Guest");
-    await page.getByRole("button", { name: "游客", exact: true }).click();
+    await page.getByRole("button", { name: "Guest", exact: true }).click();
     await page.reload();
-    await expect(page.getByText(/链上已同步/)).toBeVisible();
+    await expect(page.getByText(/On-chain state synced/)).toBeVisible();
     await page
-      .getByRole("button", { name: new RegExp(`^${asset}.*可用`) })
+      .getByRole("button", { name: new RegExp(`^${asset}.*Available`) })
       .click();
-    await page.getByLabel(`金额（${asset}）`).fill(amount);
-    await transact(page, "提取到钱包");
+    await page.getByLabel(`Amount (${asset})`).fill(amount);
+    await transact(page, "Withdraw to wallet");
   }
   await auth(page, "USDC", "damage-test", "5");
   await wallet(page, "Bikes");
-  await page.getByRole("button", { name: "商户", exact: true }).click();
+  await page.getByRole("button", { name: "Merchant", exact: true }).click();
   await transact(
     page,
-    "接受并锁定押金",
+    "Accept and lock deposit",
     page
       .locator("article")
       .filter({ hasText: "damage-test" })
-      .filter({ hasText: "待商户接受" }),
+      .filter({ hasText: "Awaiting merchant" }),
   );
   await transact(
     page,
-    "损坏并冻结",
+    "Return damaged, freeze",
     page
       .locator("article")
       .filter({ hasText: "damage-test" })
-      .filter({ hasText: "租借中" }),
+      .filter({ hasText: "Active" }),
   );
   await transact(
     page,
-    "确认已赔偿，解冻回程序余额",
+    "Confirm compensation, unfreeze",
     page
       .locator("article")
       .filter({ hasText: "damage-test" })
-      .filter({ hasText: "冻结" }),
+      .filter({ hasText: "Frozen" }),
   );
   await wallet(page, "Guest");
-  await page.getByRole("button", { name: "游客", exact: true }).click();
+  await page.getByRole("button", { name: "Guest", exact: true }).click();
   await auth(page, "USDC", "keeper-test", "5");
   await wallet(page, "Bikes");
-  await page.getByRole("button", { name: "商户", exact: true }).click();
+  await page.getByRole("button", { name: "Merchant", exact: true }).click();
   await transact(
     page,
-    "接受并锁定押金",
+    "Accept and lock deposit",
     page
       .locator("article")
       .filter({ hasText: "keeper-test" })
-      .filter({ hasText: "待商户接受" }),
+      .filter({ hasText: "Awaiting merchant" }),
   );
   const state = await loadSnapshot(makeRpc(net.rpcUrl));
   net.timeTravelToTimestamp(Number(state.timestamp + 180n * 86400n) * 1000);
   await wallet(page, "Operator");
-  await page.getByRole("button", { name: "超时释放", exact: true }).click();
-  await page.getByRole("button", { name: "刷新", exact: true }).click();
-  await transact(page, "释放到程序可用余额");
+  await page.getByRole("button", { name: "Keeper", exact: true }).click();
+  await page.getByRole("button", { name: "Refresh", exact: true }).click();
+  await transact(page, "Release to available balance");
   await page
-    .getByRole("button", { name: "查询当前角色记录", exact: true })
+    .getByRole("button", { name: "Query this role's activity", exact: true })
     .click();
   await expect(
     page
       .locator(".panel")
       .filter({
-        has: page.getByRole("heading", { name: "链上活动记录", exact: true }),
+        has: page.getByRole("heading", { name: "On-chain activity", exact: true }),
       })
       .locator("article")
-      .filter({ hasText: "超时释放" }),
+      .filter({ hasText: "Keeper release" }),
   ).toBeVisible();
   await wallet(page, "Guest");
-  await page.getByRole("button", { name: "游客", exact: true }).click();
+  await page.getByRole("button", { name: "Guest", exact: true }).click();
   // User cancellation never signs or modifies state.
   page.removeAllListeners("dialog");
   page.once("dialog", (dialog) => void dialog.dismiss());
   const beforeCancel = (await loadSnapshot(makeRpc(net.rpcUrl))).deposits.find(
     (d) => d.data.owner === people.Guest.address && d.data.mint === p.ZERO,
   )!.data.available;
-  await page.getByRole("button", { name: /^SOL.*可用/ }).click();
-  await page.getByLabel("金额（SOL）").fill("0.01");
-  await page.getByRole("button", { name: "存入", exact: true }).click();
-  await expect(page.getByRole("status")).toContainText("已取消");
+  await page.getByRole("button", { name: /^SOL.*Available/ }).click();
+  await page.getByLabel("Amount (SOL)").fill("0.01");
+  await page.getByRole("button", { name: "Deposit", exact: true }).click();
+  await expect(page.getByRole("status")).toContainText("Cancelled");
   expect(
     (await loadSnapshot(makeRpc(net.rpcUrl))).deposits.find(
       (d) => d.data.owner === people.Guest.address && d.data.mint === p.ZERO,
@@ -381,31 +381,31 @@ test("all product roles use real signed chain transactions and reload recovery",
       await route.abort("failed");
     } else await route.continue();
   });
-  await page.getByRole("button", { name: "存入", exact: true }).click();
+  await page.getByRole("button", { name: "Deposit", exact: true }).click();
   await expect(
-    page.getByRole("button", { name: "查询交易结果", exact: true }),
+    page.getByRole("button", { name: "Check transaction result", exact: true }),
   ).toBeVisible();
   await expect(
-    page.getByRole("button", { name: "存入", exact: true }),
+    page.getByRole("button", { name: "Deposit", exact: true }),
   ).toBeDisabled();
   await page.reload();
   await expect(
-    page.getByRole("button", { name: "查询交易结果", exact: true }),
+    page.getByRole("button", { name: "Check transaction result", exact: true }),
   ).toBeVisible();
-  await page.getByRole("button", { name: "查询交易结果", exact: true }).click();
-  await expect(page.getByRole("status")).toContainText("链上已确认");
+  await page.getByRole("button", { name: "Check transaction result", exact: true }).click();
+  await expect(page.getByRole("status")).toContainText("Confirmed on chain");
   expect(
     (await loadSnapshot(makeRpc(net.rpcUrl))).deposits.find(
       (d) => d.data.owner === people.Guest.address && d.data.mint === p.ZERO,
     )!.data.available,
   ).toBe(beforeCancel + 10_000_000n);
   await page.unroute(net.rpcUrl);
-  await page.getByRole("button", { name: "查询当前角色记录" }).click();
+  await page.getByRole("button", { name: "Query this role's activity" }).click();
   const historyPanel = page.locator(".panel").filter({
-    has: page.getByRole("heading", { name: "链上活动记录", exact: true }),
+    has: page.getByRole("heading", { name: "On-chain activity", exact: true }),
   });
   await expect(
-    historyPanel.locator("article").filter({ hasText: "超时释放" }),
+    historyPanel.locator("article").filter({ hasText: "Keeper release" }),
   ).toBeVisible();
   await page.setViewportSize({ width: 390, height: 844 });
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(

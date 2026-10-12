@@ -135,15 +135,21 @@ export const decimals = (asset: Asset) => (asset === "SOL" ? 9 : 6);
 export function parseAmount(value: string, asset: Asset): bigint {
   const precision = decimals(asset);
   if (!/^\d+(\.\d+)?$/.test(value) || value.length > 40)
-    throw new Error("请输入正数金额，不支持负数、指数或特殊字符。");
+    throw new Error(
+      "Enter a positive amount; negatives, exponents and special characters are not supported.",
+    );
   const [whole, fraction = ""] = value.split(".");
   if (fraction.length > precision)
-    throw new Error(`${asset} 最多支持 ${precision} 位小数。`);
+    throw new Error(
+      `${asset} supports at most ${precision} decimal places.`,
+    );
   const result =
     BigInt(whole) * 10n ** BigInt(precision) +
     BigInt(fraction.padEnd(precision, "0"));
   if (result <= 0n || result > 18446744073709551615n)
-    throw new Error("金额超出资产原生精度的有效范围。");
+    throw new Error(
+      "The amount is outside the valid range for this asset's native precision.",
+    );
   return result;
 }
 export function formatAmount(value: bigint, asset: Asset) {

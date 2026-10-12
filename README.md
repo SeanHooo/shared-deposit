@@ -195,15 +195,15 @@ Program: `Bw5pP788g5eK117b7oA1dzSMg4N5ZG5vjcHpEKTzzN2o`.
    `node scripts/deployment-check.mjs <PUBLIC_WALLET_ADDRESS>`.
 2. Review and execute `NO_DNA=1 solana program deploy --url devnet target/deploy/shared_deposit_passport.so`.
    The CLI must use the intended deployment wallet; never copy its keypair into this project.
-3. The 运营方 page can create two different six-decimal classic SPL test mints
+3. The **Operator** console can create two different six-decimal classic SPL test mints
    using wallet signing. Existing approved devnet test mints also work. These
    are project test assets, not redeemable USDC/USDT.
 4. Set the public devnet RPC in `app/.env` if necessary; default is devnet.
    `VITE_LOCALNET=true` is accepted only on a loopback RPC URL. The program address
    comes from the generated client; mint addresses come from the platform account.
-5. In the browser connect the deployment authority wallet. Under 运营方, initialize
+5. In the browser connect the deployment authority wallet. Under **Operator**, initialize
    the platform with the two mint addresses and register two merchant public keys.
-   Open 发放 devnet 测试资产 to mint test tokens to the guest wallet; the current
+   Open `Fund devnet test assets` to mint test tokens to the guest wallet; the current
    wallet must be the mint authority. The operator pays the receiving ATA rent.
 6. Connect the guest wallet. Deposit SOL/USDC/USDT, choose an enabled merchant,
    item, amount and due time, then confirm the single-use authorization.

@@ -30,22 +30,28 @@ import {
   submitTransaction,
 } from "./transactions";
 const rpc = makeRpc(RPC_URL);
-const statusNames = ["租借中", "正常归还", "冻结", "已赔偿解冻", "超时释放"];
+const statusNames = [
+  "Active",
+  "Returned",
+  "Frozen",
+  "Compensated",
+  "Keeper release",
+];
 const actionNames = [
-  "平台初始化",
-  "创建 Passport",
-  "创建资产账户",
-  "存入",
-  "提取",
-  "登记商户",
-  "更新商户",
-  "租借授权",
-  "撤销授权",
-  "锁定",
-  "正常归还",
-  "冻结",
-  "已赔偿解冻",
-  "超时释放",
+  "Platform initialized",
+  "Passport created",
+  "Asset account created",
+  "Deposit",
+  "Withdrawal",
+  "Merchant registered",
+  "Merchant updated",
+  "Rental authorized",
+  "Authorization revoked",
+  "Locked",
+  "Returned",
+  "Frozen",
+  "Unfrozen after compensation",
+  "Keeper release",
 ];
 const date = (seconds: bigint) =>
   seconds ? new Date(Number(seconds) * 1000).toLocaleString() : "—";
@@ -73,7 +79,7 @@ export function App() {
     [usdc, setUsdc] = useState(""),
     [usdt, setUsdt] = useState("");
   const [busy, setBusy] = useState(false),
-    [notice, setNotice] = useState("正在读取链上状态…");
+    [notice, setNotice] = useState("Reading on-chain state…");
   const [history, setHistory] = useState<HistoryRow[]>([]),
     [cursor, setCursor] = useState<string | null>(null);
   const epoch = useRef(0);
@@ -90,16 +96,16 @@ export function App() {
         setState((current) => (next.slot >= current.slot ? next : current));
         setFresh(true);
         setNotice((current) =>
-          current.startsWith("正在读取链上状态") ||
-          current.startsWith("读取失败")
-            ? "链上状态已同步。"
+          current.startsWith("Reading on-chain state") ||
+          current.startsWith("Read failed")
+            ? "Chain state is up to date."
             : current,
         );
       }
     } catch (error) {
       if (epoch.current === generation) {
         setFresh(false);
-        setNotice(`读取失败，资金操作已暂停：${String(error)}`);
+        setNotice(`Read failed, money operations are paused: ${String(error)}`);
       }
     }
   }, []);
@@ -133,7 +139,7 @@ export function App() {
     if (blocked || activeAction.current) return;
     activeAction.current = true;
     setBusy(true);
-    setNotice("正在校验并模拟交易…");
+    setNotice("Validating and simulating the transaction…");
     try {
       const instructions = await build();
       const result = await submitTransaction(
@@ -143,10 +149,10 @@ export function App() {
         connected?.supportedTransactionVersions.has(1) ? 1 : 0,
       );
       setNotice(result);
-      if (result.startsWith("链上已确认")) confirmed?.();
+      if (result.startsWith("Confirmed on chain")) confirmed?.();
     } catch (error) {
       setNotice(
-        `${String(error)}${pendingTransaction() ? "；已保存交易签名，请先查询结果。" : ""}`,
+        `${String(error)}${pendingTransaction() ? " A transaction signature is saved; check its result first." : ""}`,
       );
     } finally {
       await refresh();
@@ -158,7 +164,7 @@ export function App() {
     let mint = "";
     void act(
       () =>
-        `创建 ${symbol} 测试 mint：${mint}\n精度 6；铸币权限：${owner}\n仅测试资产，没有真实稳定币价值。`,
+        `Create ${symbol} test mint: ${mint}\nDecimals 6; mint authority: ${owner}\nTest asset only, not redeemable USDC/USDT.`,
       async () => {
         const result = await createTestMint(rpc, who!);
         mint = result.address;
@@ -169,9 +175,9 @@ export function App() {
   }
   function supplyTestTokens(symbol: "USDC" | "USDT") {
     void act(
-      `发放 ${testAmount} ${symbol} 测试币\n接收钱包：${testRecipient}\n运营钱包支付网络费及接收账户租金；不修改任何押金。`,
+      `Send ${testAmount} ${symbol} test tokens\nRecipient: ${testRecipient}\nThe operator wallet pays the network fee and the recipient account rent. No deposit is modified.`,
       async () => {
-        if (!platform) throw new Error("平台尚未初始化。");
+        if (!platform) throw new Error("Platform is not initialized.");
         return fundTestTokens(
           who!,
           assetMint(symbol, platform),
@@ -205,7 +211,7 @@ export function App() {
             : role === "merchant" && ownMerchant
               ? ownMerchant.address
               : passport?.address;
-      if (!target) throw new Error("当前角色还没有链上账户。");
+      if (!target) throw new Error("This role has no on-chain account yet.");
       const result = await loadHistory(
         rpc,
         target,
@@ -226,14 +232,14 @@ export function App() {
   }
   function balance(action: "deposit" | "withdraw") {
     void act(
-      `${action === "deposit" ? "存入程序押金账户" : "提取到当前游客钱包"}：${amount} ${asset}\n游客：${owner}`,
+      `${action === "deposit" ? "Deposit into the program vault" : "Withdraw to the connected wallet"}: ${amount} ${asset}\nGuest: ${owner}`,
       async () => {
-        if (!platform) throw new Error("平台尚未初始化。");
+        if (!platform) throw new Error("Platform is not initialized.");
         const mint = assetMint(asset, platform),
           account = await p.depositAddress(owner!, mint),
           existing = ownDeposits.find((e) => e.address === account);
         if (action === "withdraw" && !existing)
-          throw new Error("尚未创建该资产账户。");
+          throw new Error("This asset account does not exist yet.");
         return p.balanceInstructions(
           who!,
           mint,
@@ -247,14 +253,14 @@ export function App() {
   }
   function authorize() {
     void act(
-      `单次租借授权：${amount} ${asset}\n商户账户：${merchant}\n物品：${item}\n约定归还：${due}\n有效期一年；正常释放回程序余额，提取需另行签名。`,
+      `Single-use rental authorization: ${amount} ${asset}\nMerchant account: ${merchant}\nItem: ${item}\nAgreed return: ${due}\nValid for one year. A normal return releases the funds back into the program balance; withdrawing still requires a separate signature.`,
       async () => {
-        if (!passport || !platform) throw new Error("请先存入押金。");
+        if (!passport || !platform) throw new Error("Deposit first.");
         if (!item.trim() || new TextEncoder().encode(item).length > 64)
-          throw new Error("物品 ID 必填且不超过 64 字节。");
+          throw new Error("Item ID is required and must be at most 64 bytes.");
         const seconds = Math.floor(new Date(due).getTime() / 1000);
         if (!Number.isFinite(seconds) || seconds <= Number(state.timestamp))
-          throw new Error("请选择未来归还时间。");
+          throw new Error("Choose a return time in the future.");
         return [
           p.getAuthorizeRentalInstruction({
             owner: who!,
@@ -313,9 +319,10 @@ export function App() {
           <p className="eyebrow">
             SHARED DEPOSIT PASSPORT · {LOCAL ? "LOCALNET" : "DEVNET"}
           </p>
-          <h1>一笔押金，跨商户复用。</h1>
+          <h1>One deposit. Every merchant.</h1>
           <p className="lead">
-            存入 → 单次授权 → 商户锁定 → 归还释放 → 再次租借或提取
+            Deposit → authorize once → merchant locks → return releases → rent
+            again or withdraw
           </p>
         </div>
         <div className="wallets">
@@ -325,7 +332,7 @@ export function App() {
               disabled={busy}
               onClick={() => disconnect()}
             >
-              断开 {short(connected.account.address)}
+              Disconnect {short(connected.account.address)}
             </button>
           ) : wallets.length ? (
             wallets.map((wallet) => (
@@ -334,50 +341,61 @@ export function App() {
                 key={wallet.name}
                 onClick={() => connect(wallet)}
               >
-                连接 {wallet.name}
+                Connect {wallet.name}
               </button>
             ))
           ) : (
-            <p>请安装支持 Solana 的钱包，然后刷新页面。</p>
+            <p>Install a Solana wallet, then refresh this page.</p>
           )}
         </div>
       </header>
       <section className="hero-band">
         <span>
-          {fresh ? `链上已同步 · slot ${state.slot}` : "链上状态未确认"}
+          {fresh
+            ? `On-chain state synced · slot ${state.slot}`
+            : "On-chain state unconfirmed"}
         </span>
-        <span>{owner ?? "尚未连接钱包"}</span>
+        <span>{owner ?? "No wallet connected"}</span>
         <button onClick={() => void refresh()} disabled={busy}>
-          刷新
+          Refresh
         </button>
       </section>
       <div className="panel notice-panel" role="status">
         <p>{notice}</p>
         {!state.deployed && fresh && (
-          <p>程序尚未部署。请按 README 完成 devnet 部署后初始化平台。</p>
+          <p>
+            Program not deployed. Follow the README to deploy to devnet, then
+            initialize the platform.
+          </p>
         )}
         {state.deployed && !platform && (
-          <p>平台尚未初始化，请部署权限钱包进入运营方页面配置两个测试 mint。</p>
+          <p>
+            Platform not initialized. Connect the deployment authority wallet and
+            open the Operator console to configure the two test mints.
+          </p>
         )}
         {pendingTransaction() && (
           <>
-            <p>待确认操作：{pendingTransaction()?.summary}</p>
-            <p>上一笔交易结果待确认。刷新页面仍可恢复；请勿重新创建交易。</p>
+            <p>Unresolved operation: {pendingTransaction()?.summary}</p>
+            <p>
+              A previous transaction is unresolved. A page refresh recovers it;
+              do not create another transaction.
+            </p>
             <button disabled={busy} onClick={() => void recover(false)}>
-              查询交易结果
+              Check transaction result
             </button>
             <button disabled={busy} onClick={() => void recover(true)}>
-              重发同一已签名交易
+              Resend the same signed transaction
             </button>
           </>
         )}
       </div>
       <nav className="role-tabs">
         {[
-          ["guest", "游客"],
-          ["merchant", "商户"],
-          ["operator", "运营方"],
-          ["keeper", "超时释放"],
+          ["guest", "Guest"],
+          ["merchant", "Merchant"],
+          ["operator", "Operator"],
+          ["keeper", "Keeper"],
         ].map(([key, label]) => (
           <button
             key={key}
@@ -397,9 +415,10 @@ export function App() {
         {role === "guest" && (
           <>
             <div className="panel wide">
-              <h2>我的押金子账户</h2>
+              <h2>My deposit sub-accounts</h2>
               <p className="muted">
-                同一 Passport 最多一笔未解决的租借；其他未锁定资产可自由提取。
+                One unresolved rental per passport at a time. Any other unlocked
+                asset can be withdrawn freely.
               </p>
               <div className="asset-list">
                 {(["SOL", "USDC", "USDT"] as p.Asset[]).map((a) => {
@@ -421,14 +440,14 @@ export function App() {
                     >
                       <strong>{a}</strong>
                       <span>
-                        可用 {p.formatAmount(available, a)}
+                        Available {p.formatAmount(available, a)}
                         <br />
-                        锁定 {p.formatAmount(entry?.frozen ? 0n : locked, a)}
+                        Locked {p.formatAmount(entry?.frozen ? 0n : locked, a)}
                       </span>
                       <span>
-                        冻结 {p.formatAmount(entry?.frozen ? locked : 0n, a)}
+                        Frozen {p.formatAmount(entry?.frozen ? locked : 0n, a)}
                         <br />
-                        可提取{" "}
+                        Withdrawable{" "}
                         {p.formatAmount(
                           locked || entry?.frozen ? 0n : available,
                           a,
@@ -439,7 +458,7 @@ export function App() {
                 })}
               </div>
               <label>
-                金额（{asset}）
+                Amount ({asset})
                 <input
                   inputMode="decimal"
                   value={amount}
@@ -447,23 +466,28 @@ export function App() {
                 />
               </label>
               <div className="actions">
-                {button("存入", () => balance("deposit"), !platform)}
-                {button("提取到钱包", () => balance("withdraw"), !platform)}
+                {button("Deposit", () => balance("deposit"), !platform)}
+                {button(
+                  "Withdraw to wallet",
+                  () => balance("withdraw"),
+                  !platform,
+                )}
               </div>
               <p className="muted">
-                新锁定需额外保留 1 USDC / 1 USDT / 0.01
-                SOL。当前签名钱包支付网络费及新账户租金。
+                A new lock must leave at least 1 USDC / 1 USDT / 0.01 SOL
+                available. The connected wallet pays the network fee and the rent
+                for any new account.
               </p>
             </div>
             <div className="panel">
-              <h2>确认本次租借</h2>
+              <h2>Confirm this rental</h2>
               <label>
-                合作商户
+                Merchant
                 <select
                   value={merchant}
                   onChange={(e) => setMerchant(e.target.value)}
                 >
-                  <option value="">请选择商户</option>
+                  <option value="">Select a merchant</option>
                   {state.merchants
                     .filter((e) => e.data.active)
                     .map((e) => (
@@ -474,7 +498,7 @@ export function App() {
                 </select>
               </label>
               <label>
-                物品 ID
+                Item ID
                 <input
                   value={item}
                   onChange={(e) => setItem(e.target.value)}
@@ -482,7 +506,7 @@ export function App() {
                 />
               </label>
               <label>
-                约定归还时间
+                Agreed return time
                 <input
                   type="datetime-local"
                   value={due}
@@ -490,10 +514,10 @@ export function App() {
                 />
               </label>
               <p>
-                锁定金额：{amount} {asset}
+                Lock amount: {amount} {asset}
               </p>
               {button(
-                "确认单次授权，等待商户接受",
+                "Confirm single-use authorization",
                 authorize,
                 !merchant || !passport || passport.data.activeLock !== p.ZERO,
               )}
@@ -502,11 +526,15 @@ export function App() {
         )}
         {(role === "guest" || role === "merchant") && (
           <div className="panel">
-            <h2>{role === "merchant" ? "待处理游客授权" : "我的租借授权"}</h2>
+            <h2>
+              {role === "merchant"
+                ? "Pending guest authorizations"
+                : "My rental authorizations"}
+            </h2>
             {role === "merchant" && !ownMerchant && (
-              <p>当前钱包不是已登记商户。</p>
+              <p>This wallet is not a registered merchant.</p>
             )}
-            {relevantAuths.length === 0 && <p className="muted">暂无授权。</p>}
+            {relevantAuths.length === 0 && <p className="muted">None yet.</p>}
             {relevantAuths.map((row) => {
               const a = row.data,
                 deposit = state.deposits.find(
@@ -527,36 +555,39 @@ export function App() {
                     {a.itemId} · {p.formatAmount(a.amount, symbol)} {symbol}
                   </strong>
                   <p>
-                    游客 {short(a.owner)} · 归还 {date(a.dueAt)}
+                    Guest {short(a.owner)} · due {date(a.dueAt)}
                     <br />
-                    授权截至 {date(a.expiresAt)} ·{" "}
+                    Authorized until {date(a.expiresAt)} ·{" "}
                     {a.consumed
-                      ? "已使用"
+                      ? "Used"
                       : !a.active
-                        ? "已撤销"
+                        ? "Revoked"
                         : valid
-                          ? "待商户接受"
-                          : "已过期"}
+                          ? "Awaiting merchant"
+                          : "Expired"}
                   </p>
                   {role === "guest"
                     ? button(
-                        "撤销未使用授权",
+                        "Revoke unused authorization",
                         () =>
-                          void act(`撤销授权 ${row.address}`, async () => [
-                            p.getRevokeAuthorizationInstruction({
-                              owner: who!,
-                              passport: a.passport,
-                              depositAccount: a.depositAccount,
-                              authorization: row.address,
-                            }),
-                          ]),
+                          void act(
+                            `Revoke authorization ${row.address}`,
+                            async () => [
+                              p.getRevokeAuthorizationInstruction({
+                                owner: who!,
+                                passport: a.passport,
+                                depositAccount: a.depositAccount,
+                                authorization: row.address,
+                              }),
+                            ],
+                          ),
                         !a.active || a.consumed,
                       )
                     : button(
-                        "接受并锁定押金",
+                        "Accept and lock deposit",
                         () =>
                           void act(
-                            `接受租借：${a.itemId}\n游客：${a.owner}\n锁定 ${p.formatAmount(a.amount, symbol)} ${symbol}`,
+                            `Accept rental: ${a.itemId}\nGuest: ${a.owner}\nLock ${p.formatAmount(a.amount, symbol)} ${symbol}`,
                             async () => [
                               p.getLockDepositInstruction({
                                 merchantSigner: who!,
@@ -580,16 +611,16 @@ export function App() {
         )}
         {role === "merchant" && (
           <div className="panel">
-            <h2>归还证据</h2>
+            <h2>Return evidence</h2>
             <label>
-              照片 HTTPS 地址（可选）
+              Photo HTTPS URL (optional)
               <input
                 value={photoUrl}
                 onChange={(e) => setPhotoUrl(e.target.value)}
               />
             </label>
             <label>
-              选择照片，计算实际文件 SHA-256
+              Choose a photo to hash its actual file contents
               <input
                 type="file"
                 accept="image/*"
@@ -609,7 +640,9 @@ export function App() {
               />
             </label>
             <p className="muted">
-              文件不会上传；照片地址由商户提供。链上只保存引用、文件哈希、状态和时间。
+              The file is never uploaded; the photo URL is supplied by the
+              merchant. The chain stores only the reference, the file hash, the
+              status and the timestamps.
             </p>
             <code>
               {Array.from(photoHash, (v) =>
@@ -620,15 +653,20 @@ export function App() {
         )}
         {role !== "operator" && (
           <div className="panel">
-            <h2>{role === "keeper" ? "180 天到期锁定" : "租借与归还记录"}</h2>
+            <h2>
+              {role === "keeper"
+                ? "Rentals past 180 days"
+                : "Rentals and returns"}
+            </h2>
             {role === "keeper" && (
               <p className="muted">
-                建议由平台运营钱包提交并承担网络费。任何钱包都可自付网络费调用，费用不会从游客押金扣除。冻结租借不能超时释放。
+                The platform operator wallet is expected to submit this and pay
+                the network fee. Any wallet may submit and pay its own fee; no fee
+                is ever taken from a guest deposit. Frozen rentals cannot time
+                out.
               </p>
             )}
-            {relevantRentals.length === 0 && (
-              <p className="muted">暂无记录。</p>
-            )}
+            {relevantRentals.length === 0 && <p className="muted">None yet.</p>}
             {relevantRentals.map((row) => {
               const r = row.data,
                 eligible =
@@ -647,79 +685,78 @@ export function App() {
               return (
                 <article className="record" key={row.address}>
                   <strong>
-                    {r.itemId} · {statusNames[r.status] ?? "未知状态"}
+                    {r.itemId} · {statusNames[r.status] ?? "Unknown status"}
                   </strong>
                   <p>
-                    {p.formatAmount(r.amount, symbol)} {symbol} · 商户{" "}
+                    {p.formatAmount(r.amount, symbol)} {symbol} · merchant{" "}
                     {shop?.data.name ?? short(r.merchant)}
                     <br />
-                    游客 {short(r.owner)} · 开始 {date(r.startedAt)}
+                    Guest {short(r.owner)} · started {date(r.startedAt)}
                     <br />
-                    约定归还 {date(r.dueAt)} · 已归还 {date(r.returnedAt)}
+                    Agreed return {date(r.dueAt)} · returned {date(r.returnedAt)}
                     <br />
-                    释放 {date(r.releasedAt)} · 180 天到期{" "}
+                    Released {date(r.releasedAt)} · 180 days on{" "}
                     {date(r.startedAt + 180n * 86400n)}
                   </p>
                   {r.photoUrl.startsWith("https://") && (
                     <a href={r.photoUrl} target="_blank" rel="noreferrer">
-                      查看归还照片
+                      View return photo
                     </a>
                   )}
                   {role === "merchant" && r.status === 0 && (
                     <div className="return-actions">
-                      {["正常归还", "损坏并冻结", "遗失并冻结"].map(
-                        (label, returnStatus) =>
-                          button(
-                            label,
-                            () =>
-                              void act(
-                                `${label}：${r.itemId}\n${returnStatus ? "仅冻结，不扣款" : "释放到程序可用余额，不转出钱包"}`,
-                                async () => {
-                                  if (
-                                    photoUrl &&
-                                    (!photoUrl.startsWith("https://") ||
-                                      new TextEncoder().encode(photoUrl)
-                                        .length > 256)
-                                  )
-                                    throw new Error(
-                                      "照片引用必须是 HTTPS，最多 256 字节。",
-                                    );
-                                  return [
-                                    p.getRecordReturnInstruction({
-                                      ...rentalAccounts(row),
-                                      merchantSigner: who!,
-                                      returnStatus,
-                                      photoUrl,
-                                      photoHash,
-                                    }),
-                                  ];
-                                },
-                              ),
+                      {[
+                        "Return in good condition",
+                        "Return damaged, freeze",
+                        "Report missing, freeze",
+                      ].map((label, returnStatus) =>
+                        button(label, () =>
+                          void act(
+                            `${label}: ${r.itemId}\n${returnStatus ? "Freeze only, no deduction" : "Release to the program's available balance, not to a wallet"}`,
+                            async () => {
+                              if (
+                                photoUrl &&
+                                (!photoUrl.startsWith("https://") ||
+                                  new TextEncoder().encode(photoUrl).length >
+                                    256)
+                              )
+                                throw new Error(
+                                  "The photo reference must be HTTPS and at most 256 bytes.",
+                                );
+                              return [
+                                p.getRecordReturnInstruction({
+                                  ...rentalAccounts(row),
+                                  merchantSigner: who!,
+                                  returnStatus,
+                                  photoUrl,
+                                  photoHash,
+                                }),
+                              ];
+                            },
                           ),
+                        ),
                       )}
                     </div>
                   )}
                   {role === "merchant" &&
                     r.status === 2 &&
-                    button(
-                      "确认已赔偿，解冻回程序余额",
-                      () =>
-                        void act(
-                          `确认已赔偿：${r.itemId}\n此操作只解冻，不执行扣款。`,
-                          async () => [
-                            p.getConfirmCompensatedInstruction({
-                              ...rentalAccounts(row),
-                              merchantSigner: who!,
-                            }),
-                          ],
-                        ),
+                    button("Confirm compensation, unfreeze", () =>
+                      void act(
+                        `Confirm compensation: ${r.itemId}\nThis unfreezes only; no deduction is executed.`,
+                        async () => [
+                          p.getConfirmCompensatedInstruction({
+                            ...rentalAccounts(row),
+                            merchantSigner: who!,
+                          }),
+                        ],
+                      ),
                     )}
                   {role === "keeper" &&
                     button(
-                      eligible ? "释放到程序可用余额" : "未满 180 天",
+                      eligible ? "Release to available balance" : "180 days not reached",
                       () =>
                         void act(
-                          `180 天超时释放：${r.itemId}\n游客：${r.owner}\n仅释放活动锁定，不扣押金；调用钱包支付手续费。`,
+                          `180-day keeper release: ${r.itemId}\nGuest: ${r.owner}\nReleases the active lock only, with no penalty; the invoking wallet pays the fee.`,
                           async () => [
                             p.getKeeperReleaseInstruction({
                               ...rentalAccounts(row),
@@ -737,77 +774,78 @@ export function App() {
         {role === "operator" && (
           <>
             <div className="panel">
-              <h2>平台与合作商户管理</h2>
+              <h2>Platform and merchant management</h2>
               {!platform ? (
                 <>
                   <p>
-                    仅程序部署权限钱包可初始化。请使用两个不同的 6 位精度 SPL
-                    测试 mint。
+                    Only the program deployment authority can initialize. Use two
+                    distinct 6-decimal SPL test mints.
                   </p>
                   <label>
-                    USDC 测试 mint
+                    USDC test mint
                     <input
                       value={usdc}
                       onChange={(e) => setUsdc(e.target.value)}
                     />
                   </label>
                   <label>
-                    USDT 测试 mint
+                    USDT test mint
                     <input
                       value={usdt}
                       onChange={(e) => setUsdt(e.target.value)}
                     />
                   </label>
                   <div className="actions">
-                    {button("创建 USDC 测试 mint", () => prepareMint("USDC"))}
-                    {button("创建 USDT 测试 mint", () => prepareMint("USDT"))}
+                    {button("Create USDC test mint", () => prepareMint("USDC"))}
+                    {button("Create USDT test mint", () => prepareMint("USDT"))}
                   </div>
                   <p className="muted">
-                    可填写已有测试
-                    mint，或由当前钱包创建测试资产。名称仅是本项目标签，不代表真实
-                    USDC/USDT。
+                    Enter existing test mints, or create test assets with this
+                    wallet. The names are project labels only; they are not real
+                    USDC/USDT.
                   </p>
-                  {button(
-                    "初始化平台",
-                    () =>
-                      void act(
-                        `初始化平台\nUSDC mint：${usdc}\nUSDT mint：${usdt}\n运营钱包：${owner}`,
-                        async () => [
-                          p.getInitializePlatformInstruction({
-                            operator: who!,
-                            programData: await p.programDataAddress(),
-                            platform: await p.platformAddress(),
-                            usdcMint: address(usdc),
-                            usdtMint: address(usdt),
-                          }),
-                        ],
-                      ),
+                  {button("Initialize platform", () =>
+                    void act(
+                      `Initialize platform\nUSDC mint: ${usdc}\nUSDT mint: ${usdt}\nOperator wallet: ${owner}`,
+                      async () => [
+                        p.getInitializePlatformInstruction({
+                          operator: who!,
+                          programData: await p.programDataAddress(),
+                          platform: await p.platformAddress(),
+                          usdcMint: address(usdc),
+                          usdtMint: address(usdt),
+                        }),
+                      ],
+                    ),
                   )}
                 </>
               ) : (
                 <>
                   <p>
-                    运营钱包：{platform.operator}
+                    Operator wallet: {platform.operator}
                     <br />
-                    USDC mint：{platform.usdcMint}
+                    USDC mint: {platform.usdcMint}
                     <br />
-                    USDT mint：{platform.usdtMint}
+                    USDT mint: {platform.usdtMint}
                   </p>
-                  {!isOperator && <p>请切换到运营钱包进行管理。</p>}
+                  {!isOperator && (
+                    <p>Switch to the operator wallet to manage.</p>
+                  )}
                   <details>
-                    <summary>发放 devnet 测试资产</summary>
+                    <summary>Fund devnet test assets</summary>
                     <p className="muted">
-                      仅测试环境使用。需要当前钱包持有测试 mint 的铸币权限。
+                      Test environments only. This wallet must hold the mint
+                      authority of the test mint.
                     </p>
                     <label>
-                      测试币接收钱包
+                      Test token recipient
                       <input
                         value={testRecipient}
                         onChange={(e) => setTestRecipient(e.target.value)}
                       />
                     </label>
                     <label>
-                      测试币金额
+                      Test token amount
                       <input
                         value={testAmount}
                         onChange={(e) => setTestAmount(e.target.value)}
@@ -815,36 +853,36 @@ export function App() {
                     </label>
                     <div className="actions">
                       {button(
-                        "发放 USDC 测试币",
+                        "Send USDC test tokens",
                         () => supplyTestTokens("USDC"),
                         !isOperator,
                       )}
                       {button(
-                        "发放 USDT 测试币",
+                        "Send USDT test tokens",
                         () => supplyTestTokens("USDT"),
                         !isOperator,
                       )}
                     </div>
                   </details>
                   <label>
-                    商户钱包地址
+                    Merchant wallet address
                     <input
                       value={merchantKey}
                       onChange={(e) => setMerchantKey(e.target.value)}
                     />
                   </label>
                   <label>
-                    商户名称
+                    Merchant name
                     <input
                       value={name}
                       onChange={(e) => setName(e.target.value)}
                     />
                   </label>
                   {button(
-                    "登记合作商户",
+                    "Register merchant",
                     () =>
                       void act(
-                        `登记商户：${name}\n签名权限钱包：${merchantKey}`,
+                        `Register merchant: ${name}\nSigning authority wallet: ${merchantKey}`,
                         async () => [
                           p.getRegisterMerchantInstruction({
                             operator: who!,
@@ -863,18 +901,18 @@ export function App() {
               )}
             </div>
             <div className="panel">
-              <h2>商户名单</h2>
+              <h2>Merchants</h2>
               {state.merchants.map((m) => (
                 <article className="record" key={m.address}>
                   <strong>
-                    {m.data.name} · {m.data.active ? "已启用" : "已暂停"}
+                    {m.data.name} · {m.data.active ? "Enabled" : "Paused"}
                   </strong>
                   <p>{m.data.authority}</p>
                   {button(
-                    m.data.active ? "暂停新租借" : "恢复新租借",
+                    m.data.active ? "Pause new rentals" : "Resume new rentals",
                     () =>
                       void act(
-                        `${m.data.active ? "暂停" : "恢复"}商户 ${m.data.name}\n历史归还处理仍可继续。`,
+                        `${m.data.active ? "Pause" : "Resume"} merchant ${m.data.name}\nHistorical return handling continues.`,
                         async () => [
                           p.getSetMerchantActiveInstruction({
                             operator: who!,
@@ -892,23 +930,23 @@ export function App() {
           </>
         )}
         <div className="panel">
-          <h2>链上活动记录</h2>
+          <h2>On-chain activity</h2>
           <div className="actions">
             <button
               disabled={!owner || busy || !fresh}
               onClick={() => void readHistory()}
             >
-              查询当前角色记录
+              Query this role's activity
             </button>
             {cursor && (
               <button disabled={busy} onClick={() => void readHistory(true)}>
-                加载更早记录
+                Load older records
               </button>
             )}
           </div>
           {history.map((h, i) => (
             <article className="record" key={`${h.signature}-${i}`}>
-              <strong>{actionNames[h.action] ?? "链上操作"}</strong>
+              <strong>{actionNames[h.action] ?? "On-chain action"}</strong>
               <p>
                 {date(h.timestamp)} · {short(h.actor)}
               </p>
@@ -916,13 +954,14 @@ export function App() {
             </article>
           ))}
           <p className="muted">
-            状态和记录来自 RPC；刷新或切换钱包后重新读取。网络错误时暂停写入。
+            Status and records come from RPC; they are re-read after a refresh or
+            a wallet switch. Writes are paused while the network is failing.
           </p>
         </div>
       </section>
       <footer>
-        仅供 {LOCAL ? "Localnet" : "Solana devnet"}{" "}
-        测试。损坏与遗失只冻结，不罚扣。当前签名钱包承担网络费。
+        {LOCAL ? "Localnet" : "Solana devnet"} testing only. Damage and loss
+        freeze funds without penalty. The connected wallet pays network fees.
       </footer>
     </main>
   );
