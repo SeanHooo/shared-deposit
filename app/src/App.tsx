@@ -10,6 +10,7 @@ import { useClient } from "@solana/react";
 import type { AppClient } from "./providers";
 import * as p from "./program";
 import { createTestMint, fundTestTokens } from "./test-assets";
+import { readSetupCache, writeSetupCache } from "./setup-cache";
 import {
   assetFor,
   assetMint,
@@ -86,8 +87,8 @@ export function App() {
     [photoHash, setPhotoHash] = useState(new Uint8Array(32));
   const [merchantKey, setMerchantKey] = useState(""),
     [name, setName] = useState(""),
-    [usdc, setUsdc] = useState(""),
-    [usdt, setUsdt] = useState("");
+    [usdc, setUsdc] = useState(() => readSetupCache().usdcMint),
+    [usdt, setUsdt] = useState(() => readSetupCache().usdtMint);
   const [busy, setBusy] = useState(false),
     [notice, setNotice] = useState("Reading on-chain state…");
   const [history, setHistory] = useState<HistoryRow[]>([]),
@@ -97,6 +98,15 @@ export function App() {
   const [testRecipient, setTestRecipient] = useState(""),
     [testAmount, setTestAmount] = useState("100");
   const activeAction = useRef(false);
+  /*
+   * Keep the two mint fields across reloads. They are shown read-only from the
+   * platform account once it is initialized, so this only covers the window before
+   * `Initialize platform` lands — which is exactly the window where the address is
+   * unrecoverable, because the mint keypair is generated and thrown away.
+   */
+  useEffect(() => {
+    writeSetupCache({ usdcMint: usdc, usdtMint: usdt });
+  }, [usdc, usdt]);
   /*
    * Switching consoles by any route — tab click, back button, edited URL or the
    * wallet guess below — drops the previous console's activity list. Otherwise
