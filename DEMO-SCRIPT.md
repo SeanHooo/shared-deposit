@@ -17,9 +17,16 @@ than cuts, and the flow is a single session anyway.
 ## Setup before recording
 
 ```bash
-# 1. App running against devnet (or localnet, see RUNBOOK step 5)
-cd app
-VITE_SOLANA_RPC_URL=<working devnet RPC> npm run dev -- --host 127.0.0.1
+# 1. Open https://shared-passport.vercel.app in the browser you record with.
+#    Record the deployed build, not a dev server. The address bar then shows the URL a
+#    judge will open, and the take proves the artifact you actually submitted rather
+#    than a variant of it. Connect the wallet on that origin, because a wallet
+#    connection belongs to the origin it was made on.
+#
+#    Fallback, only if the host misbehaves: cd app && npm run dev
+#    Do not "just rebuild" the way out of a problem here: see the stale-build check in
+#    RUNBOOK Step 4, because a build that produces nothing looks the same as one that
+#    worked.
 
 # 2. Phantom switched to Devnet, with four accounts imported/created:
 #    Authority (CMNgjVq...)  -> operator
@@ -30,9 +37,18 @@ VITE_SOLANA_RPC_URL=<working devnet RPC> npm run dev -- --host 127.0.0.1
 # 4. All four wallets hold devnet SOL: each role pays its own network fee, and a
 #    wallet with 0 SOL fails at simulation, not with a funding message.
 # 5. Browser at 1440x900, zoom 110%, no bookmarks bar, clean profile.
-# 6. Do one silent rehearsal of the whole path, including switching Phantom's
-#    active account and clicking Disconnect then Connect again.
+# 6. The silent rehearsal is done: every step below ran once against devnet on
+#    2026-10-12 and the result is in VERIFICATION.md. It also confirmed that
+#    switching Phantom's active account and clicking Disconnect then Connect does
+#    update the address in the header band, which was the one thing that could not be
+#    checked without a real extension.
 ```
+
+Record the screen silently, then narrate over it, unless you are confident enough to
+narrate live. A silent take plus a second pass is the version that fails gracefully:
+you can re-word a sentence without re-performing the clicks, and the shot list gives you
+timings to cut against. Do not ship a silent click-through — the argument is the part a
+judge cannot get from the interface.
 
 Set the stage at the starting state: `Guest` account selected, **Guest** console
 open, 20 USDC already deposited. The header band shows `#/guest` — each console
