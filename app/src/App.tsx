@@ -10,6 +10,7 @@ import { useClient } from "@solana/react";
 import type { AppClient } from "./providers";
 import * as p from "./program";
 import { createTestMint, fundTestTokens } from "./test-assets";
+import { describeError } from "./errors";
 import { readSetupCache, writeSetupCache } from "./setup-cache";
 import {
   assetFor,
@@ -172,7 +173,7 @@ export function App() {
     } catch (error) {
       if (epoch.current === generation) {
         setFresh(false);
-        setNotice(`Read failed, money operations are paused: ${String(error)}`);
+        setNotice(`Read failed, money operations are paused: ${describeError(error)}`);
       }
     }
   }, []);
@@ -238,7 +239,7 @@ export function App() {
       if (result.startsWith("Confirmed on chain")) confirmed?.();
     } catch (error) {
       setNotice(
-        `${String(error)}${pendingTransaction() ? " A transaction signature is saved; check its result first." : ""}`,
+        `${describeError(error)}${pendingTransaction() ? " A transaction signature is saved; check its result first." : ""}`,
       );
     } finally {
       await refresh();
@@ -278,7 +279,7 @@ export function App() {
     try {
       setNotice(await resolvePending(resend));
     } catch (e) {
-      setNotice(String(e));
+      setNotice(describeError(e));
     } finally {
       await refresh();
       setBusy(false);
@@ -311,7 +312,7 @@ export function App() {
       setHistory((old) => (more ? [...old, ...rows] : rows));
       setCursor(result.cursor);
     } catch (e) {
-      if (historyQuery.current === query) setNotice(String(e));
+      if (historyQuery.current === query) setNotice(describeError(e));
     } finally {
       setBusy(false);
     }

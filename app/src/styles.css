@@ -76,6 +76,8 @@ input:focus { border-color: #5aab98; }
 .timeline-dot.locked { background: #e5bd66; box-shadow: 0 0 0 4px #473516; }
 .timeline-dot.frozen { background: #ff8d82; box-shadow: 0 0 0 4px #4d2422; }
 .notice-panel { border-color: #31534f; background: #101e20; }
+/* A failed simulation reports the program's own logs, which are useless without them. */
+.notice-panel p { white-space: pre-wrap; }
 footer { display: flex; gap: 24px; margin-top: 24px; color: #637781; font-size: 12px; }
 .loading { display: grid; min-height: 100vh; place-items: center; color: #8ca0aa; }
 @media (max-width: 780px) { .shell { padding: 24px 16px; } .topbar, .hero-band { display: grid; } .hero-band p { max-width: 100%; } .grid { grid-template-columns: 1fr; } .activity { grid-column: auto; grid-row: auto; } .photo-form, .form-grid { display: grid; grid-template-columns: 1fr; } footer { flex-wrap: wrap; gap: 10px 18px; } .role-tabs { overflow-x: auto; } }
