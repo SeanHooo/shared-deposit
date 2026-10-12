@@ -43,22 +43,61 @@ Note that `solana airdrop` goes to whatever `solana config` points at, and hoste
 providers often refuse to serve it. If `requestAirdrop` fails there, fund through
 the web faucet instead and keep the custom RPC only for the app and the deploy.
 
-**Fund to ~6 SOL.** The deploy needs ~5.3 SOL at peak: ~2.57 SOL of ProgramData
-rent (permanent) plus ~2.55 SOL of temporary buffer rent (recoverable after a
-successful deploy) plus fees. The devnet faucet is IP-rate-limited, so expect to
-issue several requests:
+**Fund to 8 SOL.** The deploy needs **~7.06 SOL at peak**: ~3.53 SOL of ProgramData
+rent (permanent) plus ~3.53 SOL of temporary buffer rent (returned once the deploy
+finalizes) plus a few thousand lamports of fees. The peak is what blocks you, so
+the faucet requests must be made before you start, not during. Do not target 6 SOL;
+the earlier estimate came from a smaller build of the program.
+
+If airdrop fails, diagnose in this order — the error text is the same for every
+cause, so guessing wastes the time you do not have:
 
 ```bash
-for i in 1 2 3 4 5; do solana airdrop 2 || sleep 20; done
+# 1. Which endpoint is the CLI actually using? This decides everything below.
+solana config get
+```
+
+- **If the URL is Helius, QuickNode, Alchemy or any other provider**, the
+  "rate limit" message is misleading: those endpoints do not implement
+  `requestAirdrop` at all, and they never will. Point the CLI at the public
+  devnet endpoint *just for the airdrop*, then set your custom RPC back for the
+  deploy. This is the most common cause and it is not a rate limit.
+- **If the URL is `api.devnet.solana.com`**, it is a genuine IP-based rate limit.
+  The public faucet is shared, and retrying in a tight loop usually extends the
+  block rather than clearing it. Go to the web faucet instead.
+- **If the connection times out rather than rate-limiting**, that is a network
+  problem, not a faucet problem. See the `RPC=` override above.
+
+```bash
+# Airdrop against the public endpoint explicitly, then restore your RPC.
+solana airdrop 1 --url https://api.devnet.solana.com
+solana config set --url "$RPC"
+```
+
+Fallbacks, roughly in order of how well they work when rate-limited:
+
+- **https://faucet.solana.com** — the official web faucet. It is the reliable path
+  and it is a different rate-limit bucket from the CLI. It asks you to sign in
+  with a GitHub account of a reasonable age, so do this early rather than at 2am.
+  Paste `CMNgjVqaaopNCZTsKBzD2zVxxQHMrFejNiaQW9iVXrxF` and request the maximum.
+- **Request smaller amounts.** `solana airdrop 1` sometimes succeeds where
+  `solana airdrop 2` does not, and repeating it accumulates the same total.
+- **Change your egress IP** — a phone hotspot resets the per-IP limit immediately.
+  This is the fastest fix once the CLI is genuinely rate-limited.
+- **Transfer from another funded devnet wallet**, if you have one.
+  `solana transfer --url "$RPC" CMNgjVqaaopNCZTsKBzD2zVxxQHMrFejNiaQW9iVXrxF <AMOUNT>`
+
+```bash
+# Retry loop, deliberately slow: hammering a shared faucet makes it worse.
+for i in 1 2 3 4 5; do solana airdrop 1 && break || sleep 60; done
 solana balance
 ```
 
-Fallbacks if the faucet refuses:
-
-- https://faucet.solana.com (web faucet, same address)
-- A different IP / hotspot
-- If you cannot reach ~6 SOL by **midnight**, stop and switch to the
-  localnet recording plan in the fallback section. Do not burn the whole night here.
+**Time box this to 45 minutes.** Devnet SOL is the one thing on this critical path
+you do not control, and every alternative below is a real, submittable plan. If you
+cannot reach ~7 SOL within that window, stop and switch to the localnet recording
+plan in the fallback section. A submitted video with an honest disclosure beats a
+perfect deploy that never got recorded.
 
 Sanity check the exact rent for your wallet before committing:
 
@@ -129,14 +168,19 @@ you will demo with.
 Each role pays its own network fee: the guest pays to deposit, authorize and
 withdraw, and each merchant pays to lock, return and compensate. A wallet with
 0 SOL cannot move anything, and the failure looks like a simulation error rather
-than a funding problem. Fund all four wallets before the dry run:
+than a funding problem. These wallets need only a fee budget, not rent, so 0.5 SOL
+each is plenty and 1.5 SOL covers all three.
+
+Fund them from the authority wallet rather than the faucet: the faucet is
+rate-limited per address, and spending four requests on fee budgets before the
+deploy is funded is the wrong order. The deploy authority gets its SOL first.
 
 ```bash
-for W in <guest> <bikes> <camping>; do solana transfer --url "$RPC" "$W" 0.5 --allow-unfunded-recipient; done
+for W in <guest> <bikes> <camping>; do
+  solana transfer --url "$RPC" "$W" 0.5 --allow-unfunded-recipient
+done
+solana balance   # after the deploy, confirm the buffer rent came back
 ```
-
-Or use https://faucet.solana.com, which allows roughly 1 SOL per address per day.
-0.5 SOL each is far more than the fee total; this is devnet, so it costs nothing.
 
 ### Two Phantom traps that will bite during recording
 

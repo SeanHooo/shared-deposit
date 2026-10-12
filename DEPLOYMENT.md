@@ -11,8 +11,18 @@ Prepared 2026-10-11. No deployment transaction has been sent.
 | Read-only program check | Not deployed |
 | SBF artifact | `target/deploy/shared_deposit_passport.so`, 506,456 bytes |
 | SHA-256 | `4acb20377c71624e2985c81a36bb099a643f938ca0808fccbd9b9bfc05c39841` |
-| ProgramData rent at current size | 2.57367532 devnet SOL |
-| Initial funding estimate | Approximately 6 devnet SOL, including the temporary deploy buffer and fees; buffer rent is recoverable after successful deployment |
+| ProgramData rent at current size | 3.52613784 devnet SOL, charged once and never returned |
+| Deploy buffer rent | 3.52582464 devnet SOL, refunded when the deploy finalizes |
+| Peak funding required | Approximately 7.06 devnet SOL at the moment of deploy, because the buffer coexists with the ProgramData account; the buffer refund brings the net cost back to about 3.53 devnet SOL |
+| Initial funding estimate | Fund 8 devnet SOL so the deploy is not blocked by a shortfall |
+
+The rent figures follow the Solana rent formula (6,960 lamports per byte, plus a
+128-byte account overhead). They are a function of the artifact size, not of the
+network, so they can be recomputed without an RPC: a 1 MB program needs about
+6.96 SOL, and this 506,456-byte artifact scales from that. Earlier revisions of
+this file carried 2.57367532 SOL, which was correct for a 369,608-byte build and
+is stale now that the artifact has grown by 136,848 bytes. Confirm the exact
+figure with `node scripts/deployment-check.mjs <WALLET>` once an RPC is reachable.
 
 Read-only repeatable check:
 
@@ -24,7 +34,8 @@ Prepared deploy command, to be executed after funding and transaction approval:
 
 ```bash
 export PATH="${HOME}/.local/share/solana/install/active_release/bin:${PATH}"
-NO_DNA=1 solana program deploy --url devnet \
+RPC=https://api.devnet.solana.com   # NOT the alias 'devnet': that always resolves to api.devnet.solana.com
+NO_DNA=1 solana program deploy --url "$RPC" \
   --program-id target/deploy/shared_deposit_passport-keypair.json \
   target/deploy/shared_deposit_passport.so
 ```
