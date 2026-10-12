@@ -996,7 +996,7 @@ export function App() {
                     "Register merchant",
                     () =>
                       void act(
-                        `Register merchant: ${name}\nSigning authority wallet: ${merchantKey}`,
+                        `Register merchant: ${name}\nMerchant wallet: ${merchantKey} (identity only, never signs)`,
                         async () => [
                           p.getRegisterMerchantInstruction({
                             operator: who!,
