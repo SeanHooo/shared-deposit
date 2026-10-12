@@ -87,6 +87,11 @@ Say these plainly. They cost you nothing and buy credibility:
   the extension **and** clicking Disconnect then Connect again. Confirm that this
   updates the address in the header band during the rehearsal; if it does not, use
   a separate browser profile per role instead. Do not discover this while recording.
+- Do not rely on the wallet to pick the console. The wallet chooses a landing console
+  only while you have not chosen one yourself; the moment you click a console tab,
+  that choice is pinned and later account switches will not move you. Every role
+  change in the shot list therefore means **switch the Phantom account, then click
+  the console tab**. Two deliberate clicks, not one hopeful wait.
 - Do not use a screen recording with system notifications enabled.
 - Do not exceed 3:00. Colosseum submissions are skimmed first; a 3-minute cut that
   lands three points beats a 7-minute tour.

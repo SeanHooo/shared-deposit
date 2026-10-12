@@ -150,18 +150,70 @@ account → Import private key). Note the trade-off honestly: it puts the devnet
 key inside a browser extension. It never enters this repository, and it must never
 be reused for anything real.
 
-1. Run the app locally against devnet:
-   ```bash
-   cd app
-   VITE_SOLANA_RPC_URL=<your-working-devnet-rpc> npm run dev -- --host 127.0.0.1
-   ```
-2. Connect the authority wallet. Open the **Operator** tab.
-3. `Create USDC test mint` → wait for `Confirmed on chain`. Repeat for `Create USDT test mint`.
-4. `Initialize platform`.
-5. Open `Fund devnet test assets`, send ~100 USDC and ~100 USDT to the guest wallet
-you will demo with.
-6. Register two merchants (wallet public key + name). Use two more Phantom
-   accounts: `Bikes` and `Camping`.
+Four wallets, two consoles. The app picks the landing console from the connected
+wallet, so you switch roles by switching the active account in Phantom:
+
+| Wallet | Role | Lands on |
+| --- | --- | --- |
+| `CMNgjVq…` (deploy authority) | Operator | `#/operator` |
+| A fresh account, `Guest` | Guest | `#/guest` |
+| A fresh account, `Bikes` | Merchant | `#/merchant` |
+| A fresh account, `Camping` | Merchant | `#/merchant` |
+
+Run the app locally against devnet:
+
+```bash
+cd app
+VITE_SOLANA_RPC_URL=<your-working-devnet-rpc> npm run dev -- --host 127.0.0.1
+```
+
+Then, in order. **The order matters**: `Initialize platform` writes the two mint
+addresses into the platform account and the program rejects any mint that is not
+6-decimal, so the mints have to exist first.
+
+1. Connect the **authority** wallet. It lands on the operator console.
+2. `Create USDC test mint` → wait for `Confirmed on chain`. The address appears in
+   the **USDC test mint** field. Do the same for `Create USDT test mint`.
+   The field keeps its value across a reload, but note the addresses anyway: the
+   mint keypair is generated in the browser and discarded, so if they are lost the
+   account can only be found again in an explorer.
+3. `Initialize platform`. Afterwards the two addresses are shown read-only, which
+   means they came from chain and the platform is live.
+4. `Fund devnet test assets`: send ~100 USDC and ~100 USDT to the **guest** wallet.
+   Do this before the guest's first deposit, since the guest signs the deposit
+   themselves. The recipient's token account is created if it does not exist.
+5. Register two merchants: `Bikes` and `Camping`, each as its wallet public key.
+   Register them **before** connecting as those wallets, or the merchant console has
+   nothing to show and the wallet lands on the guest console.
+6. Fund all three non-authority wallets with SOL — see the next section. Do not skip
+   it and do not leave it until the recording.
+
+### Sanity check before recording
+
+- `solana balance --url "$RPC"` should show that the buffer rent came back: the
+  authority should hold roughly 3.5 SOL more than its peak-minus-net calculation
+  suggests, and comfortably more than 1.5 SOL to fund the other three wallets.
+- Switch to `Guest`, deposit 20 USDC, and confirm the balance appears **without**
+  clicking anything labelled initialize. The first deposit creates the passport and
+  the asset sub-account inside the same transaction.
+- Switch back to the authority and confirm the header band shows the authority
+  address. **The console will not follow on its own at this point**, and that is by
+  design, not a bug — see the note below. Click the `Operator` tab.
+
+### How console switching actually works
+
+Worth knowing before you record, because it is easy to misread as a broken wallet:
+
+- The connected wallet chooses the console **only while you have not chosen one
+  yourself**. Click a console tab once and that choice is pinned for the session.
+- Reloading a URL that already contains `#/guest` also counts as an explicit choice,
+  so a wallet guess never overrides a deep link. That is the point of having URLs.
+- Everything degrades safely: a connected merchant wallet sitting on the guest
+  console shows the guest view, and the merchant console shows an explicit "switch
+  to the merchant wallet" notice rather than silently rendering someone else's data.
+- Therefore, during setup and during the demo, **switch the Phantom account and then
+  click the console tab**. It is one extra click and it is deterministic. Do not
+  build any part of the recording on the automatic jump.
 
 ### Fund every signing wallet with SOL (do not skip)
 
@@ -237,6 +289,18 @@ Use a **public** devnet RPC for the hosted build, not your personal Helius key �
 the key would ship inside the JavaScript bundle and is trivially extracted. The
 public `api.devnet.solana.com` is the right default for judges; a dedicated key is
 only for your local recording, where your network may need it.
+
+Verify that for yourself before you publish, because it takes two seconds and the
+error is invisible once deployed:
+
+```bash
+grep -oE "https://[a-zA-Z0-9./?=_&:-]*" dist/assets/*.js | sort -u
+grep -icE "helius|quicknode|alchemy|api-key" dist/assets/*.js   # must print 0 for each
+```
+
+The first command must show `https://api.devnet.solana.com` and nothing provider-
+specific; the second must be zero. If a key appears, rebuild with the public URL
+and republish — the old bundle may already be cached by a CDN.
 
 Then paste the URL into `README.md` (`Live demo`) and into the Colosseum form.
 
