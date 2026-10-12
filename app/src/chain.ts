@@ -178,6 +178,47 @@ export async function loadUpgradeAuthority(
   );
 }
 
+/**
+ * The mint authority recorded in an SPL token mint, or null when the mint has none.
+ *
+ * Layout: a 4-byte COption tag and then 32 bytes. That tag is four bytes here and one
+ * byte in ProgramData, which is the kind of difference that silently returns a shifted
+ * address instead of failing, so the test pins the answer against a real devnet account
+ * rather than against a buffer this file built itself.
+ */
+export function mintAuthority(data: Uint8Array): Address | null {
+  if (data.length < 82) return null;
+  const tag = new DataView(data.buffer, data.byteOffset, data.byteLength).getUint32(
+    0,
+    true,
+  );
+  if (tag !== 1) return null;
+  return getAddressDecoder().decode(data.subarray(4, 36));
+}
+
+/**
+ * Read both test mints' authorities. This is what decides whether the connected wallet
+ * can fund them: `fundTestTokens` signs with the connected wallet as the mint authority,
+ * and the platform pins whichever mints were initialized, so the operator is not
+ * necessarily the wallet that can mint.
+ */
+export async function loadMintAuthorities(
+  rpc: PassportRpc,
+  usdcMint: Address,
+  usdtMint: Address,
+): Promise<{ usdc: Address | null; usdt: Address | null }> {
+  const read = async (mint: Address) => {
+    const info = await rpc
+      .getAccountInfo(mint, { encoding: "base64", commitment: "confirmed" })
+      .send();
+    return info.value
+      ? mintAuthority(new Uint8Array(getBase64Encoder().encode(info.value.data[0])))
+      : null;
+  };
+  const [usdc, usdt] = await Promise.all([read(usdcMint), read(usdtMint)]);
+  return { usdc, usdt };
+}
+
 export type HistoryRow = sdk.PassportEventEvent & { signature: string };export async function loadHistory(
   rpc: PassportRpc,
   account: Address,

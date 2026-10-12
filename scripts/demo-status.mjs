@@ -126,7 +126,7 @@ if (genesis !== DEVNET_GENESIS) {
 }
 console.log('genesis               : devnet');
 
-const remaining = [];
+const remaining = new Set();
 
 console.log('\n--- Program ---');
 const program = await rpc('getAccountInfo', [PROGRAM, { encoding: 'base64', commitment: 'confirmed' }]);
@@ -167,7 +167,7 @@ let minted = null;
 if (!platformAccount.value) {
   console.log(`platform PDA          : ${PLATFORM} not found`);
   console.log('Step 2.3 Initialize platform is still pending.');
-  remaining.push('Initialize platform (operator console, signed by the upgrade authority)');
+  remaining.add('Initialize platform (operator console, signed by the upgrade authority)');
 } else {
   const data = bytesOf(platformAccount.value.data[0]);
   if (!same(data, PLATFORM_DISC)) {
@@ -197,8 +197,16 @@ if (!platformAccount.value) {
       console.log(`  ${name} mint account    : NOT FOUND — the platform points at a missing mint`);
       continue;
     }
-    const decimals = bytesOf(info.value.data[0])[44];
+    // SPL token mint layout: authority tag and key at 0, supply at 36, decimals at 44.
+    // Cross-checked against `spl-token display`, which parses with its own code.
+    const data = bytesOf(info.value.data[0]);
+    const decimals = data[44];
+    const raw = data.readBigUInt64LE(36);
+    const supply = decimals > 0 ? Number(raw) / 10 ** decimals : Number(raw);
     console.log(`  ${name} mint decimals   : ${decimals}${decimals === 6 ? '' : '  UNEXPECTED, the program requires 6'}`);
+    console.log(`  ${name} mint supply     : ${supply}${raw === 0n ? '  (nothing has ever been minted)' : ''}`);
+    if (raw === 0n)
+      remaining.add(`Fund devnet test assets: the ${name} test mint still has a supply of 0, so no wallet holds any`);
   }
 }
 
@@ -219,7 +227,7 @@ const merchants = all
   });
 if (merchants.length === 0) {
   console.log('none registered');
-  remaining.push('Register Bikes and Camping by wallet public key, while the operator wallet is connected');
+  remaining.add('Register Bikes and Camping by wallet public key, while the operator wallet is connected');
 } else {
   for (const merchant of merchants)
     console.log(`${merchant.name.padEnd(10)} ${merchant.active ? 'Enabled' : 'Paused '}  ${merchant.authority}`);
@@ -228,7 +236,7 @@ if (merchants.length === 0) {
   const named = new Set(merchants.map((m) => m.name));
   for (const expected of ['Bikes', 'Camping'])
     if (!named.has(expected))
-      remaining.push(`Register the merchant named ${expected}`);
+      remaining.add(`Register the merchant named ${expected}`);
 }
 // Every account type gets a discriminator, so the rehearsal can be read off the chain:
 // a completed deposit and return leave a passport, a deposit account and a rental lock
@@ -250,13 +258,13 @@ for (const row of all) {
 const counts = TYPES.map(([name]) => `${name} ${tally.get(name)}`).join('  ');
 console.log(counts.replace(/Platform \d+ {2}/, ''));
 if (tally.get('DepositPassport') === 0)
-  remaining.push('Run the unrecorded loop at least once: no passport exists yet, so nothing is proven');
+  remaining.add('Run the unrecorded loop at least once: no passport exists yet, so nothing is proven');
 
 console.log('\n--- Fee budgets (each role pays its own network fee) ---');
 if (wallets.length === 0) {
   console.log('No wallets given, so this cannot be checked.');
   console.log('Pass the role addresses: node scripts/demo-status.mjs guest=<ADDR> bikes=<ADDR> camping=<ADDR>');
-  remaining.push(`Fund every role wallet with ${FEE_BUDGET} SOL (addresses not supplied, so unchecked)`);
+  remaining.add(`Fund every role wallet with ${FEE_BUDGET} SOL (addresses not supplied, so unchecked)`);
 } else {
   for (const { label, value } of wallets) {
     const lamports = (await rpc('getBalance', [value])).value;
@@ -264,7 +272,7 @@ if (wallets.length === 0) {
     const verdict = amount === 0 ? 'NO SOL' : amount < FEE_BUDGET / 10 ? 'too low for fees' : 'ok';
     console.log(`${label.padEnd(10)} ${sol(lamports).padStart(14)} SOL  ${verdict}`);
     if (amount < FEE_BUDGET / 10)
-      remaining.push(`Fund ${label} ${value} with ${FEE_BUDGET} SOL from the authority wallet`);
+      remaining.add(`Fund ${label} ${value} with ${FEE_BUDGET} SOL from the authority wallet`);
   }
 }
 
@@ -287,12 +295,12 @@ if (!minted) {
     const shown = mine.map((row) => `${row.amount} ${row.mint === minted.usdc ? 'USDC' : 'USDT'}`);
     console.log(`${label.padEnd(10)} ${shown.length ? shown.join('  ') : 'no test tokens'}`);
     if (label === 'guest' && !mine.some((row) => row.amount >= 1))
-      remaining.push('Fund devnet test assets to the guest wallet before its first deposit');
+      remaining.add('Fund devnet test assets to the guest wallet before its first deposit');
   }
 }
 
 console.log('\n--- What is left ---');
-if (remaining.length === 0) {
+if (remaining.size === 0) {
   console.log('Setup is complete as far as the chain can tell. Next: Step 3 of RUNBOOK-DEPLOY.md,');
   console.log('the unrecorded run of the whole loop (deposit, authorize, lock, return, authorize a');
   console.log('second merchant without depositing, withdraw). Every wallet in that loop is funded,');

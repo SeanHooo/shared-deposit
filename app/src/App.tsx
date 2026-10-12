@@ -18,6 +18,7 @@ import {
   assertNetwork,
   emptySnapshot,
   loadHistory,
+  loadMintAuthorities,
   loadSnapshot,
   loadUpgradeAuthority,
   makeRpc,
@@ -99,6 +100,12 @@ export function App() {
   const historyQuery = useRef(0);
   const [testRecipient, setTestRecipient] = useState(""),
     [testAmount, setTestAmount] = useState("100");
+  // Null means "not known yet", which is deliberately different from "no authority": a
+  // failed read must not disable a button that would have worked.
+  const [mintAuthorities, setMintAuthorities] = useState<{
+    usdc: string | null;
+    usdt: string | null;
+  } | null>(null);
   const activeAction = useRef(false);
   /*
    * Keep the two mint fields across reloads. They are shown read-only from the
@@ -219,6 +226,54 @@ export function App() {
     applyRole(guess);
     window.history.replaceState(null, "", roleHash(guess));
   }, [owner, fresh, isOperator, ownMerchant, role, applyRole]);
+  /*
+   * Who can fund the test mints is recorded on the mints, not in the platform, and it is
+   * not necessarily the operator: whichever wallet created a mint is its authority for
+   * good. Gating the send buttons on `isOperator` therefore enabled them for a wallet
+   * that could not sign and disabled them for the wallet that could. Read the answer
+   * instead of inferring it. Two reads per page load, not per refresh.
+   */
+  useEffect(() => {
+    if (!platform) return;
+    let live = true;
+    void (async () => {
+      try {
+        const authorities = await loadMintAuthorities(
+          rpc,
+          platform.usdcMint,
+          platform.usdtMint,
+        );
+        if (live) setMintAuthorities(authorities);
+      } catch {
+        // Leaving this null keeps both buttons enabled, so a failed read cannot block
+        // setup; the mint program rejects the wrong signer and the log says why.
+        if (live) setMintAuthorities(null);
+      }
+    })();
+    return () => {
+      live = false;
+    };
+  }, [platform?.usdcMint, platform?.usdtMint]);
+  /**
+   * The authority of a test mint, or null when it is unknown or the mint records none.
+   */
+  const mintAuthorityOf = (symbol: "USDC" | "USDT") =>
+    mintAuthorities?.[symbol === "USDC" ? "usdc" : "usdt"] ?? null;
+  /**
+   * True when the connected wallet can mint that test token, or when that is still
+   * unknown. Unknown counts as true so a button never waits on a read that has not
+   * landed, and a rejected signature still explains itself through the program logs.
+   */
+  const canMint = (symbol: "USDC" | "USDT") => {
+    const minted = mintAuthorityOf(symbol);
+    return minted === null || minted === owner;
+  };
+  // Named per symbol rather than as one boolean, so a mismatch on either mint explains
+  // itself and names the wallet that has to sign.
+  const unmintable = (["USDC", "USDT"] as const).filter((symbol) => !canMint(symbol));
+  const neededWallets = [
+    ...new Set(unmintable.map(mintAuthorityOf).filter((a) => a !== null)),
+  ];
   /**
    * The InvalidAuthority message names the account that rejected the constraint but not
    * which side of the comparison was wrong, because answering that needs a read the
@@ -299,9 +354,14 @@ export function App() {
   }
   function supplyTestTokens(symbol: "USDC" | "USDT") {
     void act(
-      `Send ${testAmount} ${symbol} test tokens\nRecipient: ${testRecipient}\nThe operator wallet pays the network fee and the recipient account rent. No deposit is modified.`,
+      `Send ${testAmount} ${symbol} test tokens\nRecipient: ${testRecipient}\nThe mint authority wallet pays the network fee and the recipient account rent. No deposit is modified.`,
       async () => {
         if (!platform) throw new Error("Platform is not initialized.");
+        const authority = mintAuthorityOf(symbol);
+        if (authority && authority !== who!.address)
+          throw new Error(
+            `These ${symbol} test tokens were created by ${authority}, so only that wallet can mint them. Connect it, or create different mints before initializing the platform.`,
+          );
         return fundTestTokens(
           who!,
           assetMint(symbol, platform),
@@ -969,14 +1029,25 @@ export function App() {
                       {button(
                         "Send USDC test tokens",
                         () => supplyTestTokens("USDC"),
-                        !isOperator,
+                        !canMint("USDC"),
                       )}
                       {button(
                         "Send USDT test tokens",
                         () => supplyTestTokens("USDT"),
-                        !isOperator,
+                        !canMint("USDT"),
                       )}
                     </div>
+                    {unmintable.length > 0 && (
+                      <p>
+                        The connected wallet cannot mint {unmintable.join(" or ")}{" "}
+                        test tokens. Those mints were created by
+                        {neededWallets.length > 0
+                          ? ` ${neededWallets.join(", ")}, so connect that wallet to fund them.`
+                          : " a wallet record this browser cannot read, so open the mint in an explorer."}{" "}
+                        The platform keeps whichever mints it was initialized with,
+                        so they cannot be swapped from here.
+                      </p>
+                    )}
                   </details>
                   <label>
                     Merchant wallet address
