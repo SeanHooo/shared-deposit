@@ -323,6 +323,17 @@ without recording**:
 
 Every wallet in that loop must hold devnet SOL, or the run stalls on a fee error.
 
+Read the result back rather than trusting the run. This prints the accounts the loop
+left behind and checks the claim against them:
+
+```bash
+cd app && npm run report:loop -- guest=<GUEST ADDRESS>
+```
+
+The line to look for is `available to guest : 20` next to `still locked : nothing`,
+with two rentals at two merchants. That is the money shot as a number, and it is worth
+having on screen in the video instead of a screenshot.
+
 Then update `VERIFICATION.md`'s devnet acceptance checklist with real results and
 the program address.
 
@@ -334,6 +345,18 @@ The RPC URL is compiled in at build time (`import.meta.env`), so set it:
 cd app
 VITE_SOLANA_RPC_URL=https://api.devnet.solana.com npm run build
 ```
+
+The build is silent when nothing was built. A `dist/` that already exists looks
+finished, so check that it is newer than the sources before you host it:
+
+```bash
+find src -newer dist/index.html -name '*.ts*' | grep . && echo "STALE: rebuild before hosting"
+```
+
+This is not hypothetical. A bundle left over from an earlier afternoon was hosted
+once while `src/` had moved on, which means the recording would have shown an older
+interface, including a confirmation dialog that named the wrong signer. The build
+succeeded both times, so nothing warned about it.
 
 Hosting — pick one and get a public HTTPS URL:
 
