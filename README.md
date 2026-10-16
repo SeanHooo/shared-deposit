@@ -91,10 +91,28 @@ persisted state from RPC.
 - If you hold a little devnet SOL, deposit and withdraw it. That path is yours alone and
   needs nobody's permission, which is what an account the guest owns is for.
 
-The rest of the loop needs a second party: a lock is accepted by a *merchant* key, and the
-recorded demo's two merchants are wallets held by the developer. That is the part the video
-shows — and the activity above is how you confirm a rental happened without having to trust
-the video. Step by step: [DEMO-SCRIPT.md](DEMO-SCRIPT.md).
+### The whole loop, in your own browser, with no keys at all
+
+```bash
+cd app && npm install && npx playwright install chromium && npm run demo
+```
+
+No wallet, no funding, no RPC endpoint, no Solana toolchain, nothing spent. A browser window
+opens on an in-process validator running the program artifact committed in this repository —
+the same bytes devnet is executing — with four wallets already installed, one per role. The
+header says **LOCALNET**; every transaction you sign is really executed by the program, and
+there is no mocked chain state anywhere. Change role the way the tests do: **Disconnect**,
+then **Connect Guest** / **Connect Bikes** / **Connect Camping**.
+
+The terminal prints the loop to click, with the addresses this run actually generated, so the
+merchant registration below is copy and paste. It ends when you close the window. The one path
+it cannot show you is the 180-day keeper release, which needs time to pass; that stays in the
+automated suite, which owns a clock it can move.
+
+On the *hosted* deployment the rest of the loop needs a second party: a lock is accepted by a
+*merchant* key, and the recorded demo's two merchants are wallets held by the developer. That
+is the part the video shows — and the activity above is how you confirm a rental happened
+without having to trust the video. Step by step: [DEMO-SCRIPT.md](DEMO-SCRIPT.md).
 
 Two things that look like bugs and are not. **Balances read zero for a wallet that has never
 deposited**, because a deposit account is derived from its owner's address: there is no
@@ -152,7 +170,8 @@ is verified against the **actual compiled SBF program**:
 | Frozen-state rule | Frozen rentals do **not** auto-release at 180 days; only the original merchant can unfreeze after compensation |
 | Wallet-signed browser E2E | Full four-role flow with real Wallet Standard signatures, not mocked state |
 | Deliberate RPC failure | The response is dropped *after* the validator executed. The UI blocks new writes, survives a reload, and resolves the saved signature. The balance increases exactly once |
-| Deployed-build smoke test | The **live URL** in a real browser: zero page errors, console errors, failed requests and 4xx responses, a live slot read, and the platform's real audit trail read back with a wallet that holds none of the demo's keys |
+| Deployed-build smoke test | `DEMO_URL=https://shared-deposit.vercel.app npm run test:e2e` — the live URL in a real browser: zero page errors, console errors, failed requests and 4xx responses, a live slot, the platform's real audit trail read back by a wallet holding none of the demo's keys, and two digest comparisons — the served bundle against the local build, and the repository's program artifact against the ELF inside devnet's ProgramData account |
+| Interactive loop, no keys | `cd app && npm run demo` — the same validator and the same artifact, clicked by a person; it prints what to click and the addresses to paste |
 | Genesis check | Funds operations are blocked unless the RPC is genuinely devnet |
 
 Reproduce it yourself. No keys, no funded wallet and no network needed: the
