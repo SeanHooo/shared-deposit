@@ -91,6 +91,53 @@ database and no indexer in the trust path — the program is the only authority.
 Rust, Anchor, Solana, SPL Token, PDAs, `@solana/kit`, Wallet Standard, Codama,
 TypeScript, React, Vite, Playwright, Surfpool
 
+## How it uses these chains
+
+If the form lists multiple chains, select **Solana only** — the product is
+single-chain by design, so leave the others unselected rather than padding them.
+
+**Long answer (~180 words, paste as-is):**
+
+Solana is the only chain we use — one chain, by design.
+
+Shared Deposit Passport is an Anchor program deployed on **Solana devnet**
+(program `Bw5pP788g5eK117b7oA1dzSMg4N5ZG5vjcHpEKTzzN2o`). A single chain is a
+requirement, not a limitation: the passport only works if every merchant can
+settle the same balance in one place, and a multi-chain passport would fragment
+the exact liquidity the product exists to share.
+
+How it uses Solana specifically:
+
+- **Program logic:** 16 Rust/Anchor instructions over 6 PDA account types
+  (`Platform`, `DepositPassport`, `DepositAccount`, `Merchant`,
+  `MerchantAuthorization`, `RentalLock`). The chain is the only authority — no
+  backend, database or indexer in the trust path.
+- **Assets:** SOL plus the USDC and USDT classic SPL mints, as per-asset
+  sub-accounts inside one passport.
+- **Transactions:** each rental is 2–3 wallet-signed actions
+  (authorize → lock → release). Every transition emits a `PassportEvent` audit
+  event read straight from the chain.
+- **Wallets:** Wallet Standard + `@solana/kit`, so signing is a normal wallet
+  signature.
+- **Why Solana:** deposits of $5–50 cannot absorb meaningful fees, and the lock
+  must confirm while the guest is at the counter — low per-action cost and
+  sub-second finality are product requirements, not preferences.
+
+Mainnet and multi-chain are explicitly out of scope for v1 — deliberate
+decisions, not unfinished work.
+
+**Short answer (if the field is small):**
+
+> Solana only, by design. An Anchor program on **Solana devnet** holds one
+> deposit passport per guest, reusable across every allowlisted merchant. 16
+> instructions over 6 PDAs, supporting SOL + SPL USDC/USDT, with every
+> authorize / lock / release / freeze written as an on-chain event. Each rental
+> is 2–3 wallet-signed transactions via `@solana/kit` and Wallet Standard — no
+> backend, database or indexer in the trust path. Solana is the only chain that
+> makes $5–50 deposits viable (near-zero per-action fees) with sub-second
+> finality, so the lock confirms while the guest is at the counter. Mainnet and
+> multi-chain are deliberately out of scope for v1.
+
 ## What's novel (three bullets)
 
 - **The deposit is a wallet-held, merchant-agnostic balance.** Not a pre-auth on

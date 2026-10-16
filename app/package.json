@@ -10,6 +10,7 @@
     "generate": "node scripts/generate-client.mjs",
     "test": "vitest run tests/*.test.ts",
     "test:e2e": "NODE_OPTIONS='--import tsx' playwright test",
+    "demo": "NODE_OPTIONS='--import tsx' playwright test --config playwright.demo.config.ts",
     "report:loop": "NODE_OPTIONS='--import tsx' tsx scripts/report-loop.ts"
   },
   "dependencies": {
