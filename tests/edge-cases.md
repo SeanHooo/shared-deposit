@@ -5,7 +5,7 @@ created: 2026-10-11
 status: implemented-local
 ---
 
-# Edge Cases: Shared Deposit Passport
+# Edge Cases: Shared Deposit
 
 ## Feature Overview
 

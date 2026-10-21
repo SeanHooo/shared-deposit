@@ -67,7 +67,7 @@ each was read from, so that claim can be checked rather than believed:
 
 | What | Digest | Read from |
 | --- | --- | --- |
-| The program | `4acb20377c71624e2985c81a36bb099a643f938ca0808fccbd9b9bfc05c39841` | `programs/shared-deposit-passport/artifacts/shared_deposit_passport.so`, and independently out of the ProgramData account on devnet |
+| The program | `4acb20377c71624e2985c81a36bb099a643f938ca0808fccbd9b9bfc05c39841` | `programs/shared-deposit/artifacts/shared_deposit.so`, and independently out of the ProgramData account on devnet |
 | The client bundle | printed by the build | `app/dist/assets/*.js`, and from the deployed site |
 | The artifact the suite deploys | the same `.so` as row 1 | `app/e2e/harness.ts` logs the path and digest before deploying |
 

@@ -13,7 +13,7 @@ pub const COMPENSATED: u8 = 3;
 pub const TIMED_OUT: u8 = 4;
 
 #[program]
-pub mod shared_deposit_passport {
+pub mod shared_deposit {
     use super::*;
 
     pub fn initialize_platform(ctx: Context<InitializePlatform>) -> Result<()> {
@@ -548,7 +548,7 @@ pub struct InitializePlatform<'info> {
     #[account(mut)]
     pub operator: Signer<'info>,
     #[account(constraint = program.programdata_address()? == Some(program_data.key()) @ ErrorCode::InvalidAuthority)]
-    pub program: Program<'info, crate::program::SharedDepositPassport>,
+    pub program: Program<'info, crate::program::SharedDeposit>,
     #[account(constraint = program_data.upgrade_authority_address == Some(operator.key()) @ ErrorCode::InvalidAuthority)]
     pub program_data: Account<'info, ProgramData>,
     #[account(constraint = usdc_mint.decimals == 6 @ ErrorCode::InvalidAsset)]

@@ -43,7 +43,7 @@ node scripts/demo-status.mjs
 | Program | `Bw5pP788g5eK117b7oA1dzSMg4N5ZG5vjcHpEKTzzN2o` |
 | Configured CLI payer / initial upgrade authority | `CMNgjVqaaopNCZTsKBzD2zVxxQHMrFejNiaQW9iVXrxF` |
 | Read-only balance check | 2.27559592 devnet SOL remaining after the deploy || Read-only program check | Deployed and executable |
-| SBF artifact | `target/deploy/shared_deposit_passport.so`, 506,456 bytes |
+| SBF artifact | `target/deploy/shared_deposit.so`, 506,456 bytes |
 | SHA-256 | `4acb20377c71624e2985c81a36bb099a643f938ca0808fccbd9b9bfc05c39841` |
 | ProgramData rent at current size | 2.57367532 devnet SOL, measured from the cluster rather than assumed |
 | Peak funding required | One rent, not two. The deploy buffer is funded and then transferred into the ProgramData account, so the two do not coexist. The successful deploy on 2026-10-12 consumed 2.57367532 SOL of rent plus roughly 0.0007 SOL of signature fees. |
@@ -84,8 +84,8 @@ The deploy command that was used:
 export PATH="${HOME}/.local/share/solana/install/active_release/bin:${PATH}"
 RPC=https://api.devnet.solana.com   # NOT the alias 'devnet': that always resolves to api.devnet.solana.com
 NO_DNA=1 solana program deploy --url "$RPC" \
-  --program-id target/deploy/shared_deposit_passport-keypair.json \
-  target/deploy/shared_deposit_passport.so
+  --program-id target/deploy/shared_deposit-keypair.json \
+  target/deploy/shared_deposit.so
 ```
 
 The command uses the existing configured CLI wallet without reading or copying

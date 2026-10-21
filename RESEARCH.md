@@ -1,4 +1,4 @@
-# Shared Deposit Passport
+# Shared Deposit
 
 > 需求研究与第一版范围说明
 >
@@ -101,7 +101,7 @@
 
 这些内容来自当前产品描述，可作为需求基线：
 
-- 产品名称/方向：Shared Deposit Passport。
+- 产品名称/方向：Shared Deposit。
 - 使用场景：游客用一笔押金在多个合作商户处使用自行车、储物柜、露营设备或充电宝。
 - Solana 负责统一押金账户。
 - 多商户可以获得受限的额度锁定权限。

@@ -1,4 +1,4 @@
-# Shared Deposit Passport Implementation Plan
+# Shared Deposit Implementation Plan
 
 ## Skills
 

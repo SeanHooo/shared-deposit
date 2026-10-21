@@ -8,7 +8,7 @@ duration: 1:30 primary (+ 0:45 emergency cut)
 companions: PITCH.md, DEMO-SCRIPT.md, SUBMISSION.md, VERIFICATION.md
 ---
 
-# Shared Deposit Passport — 90 秒演讲全套
+# Shared Deposit — 90 秒演讲全套
 
 界面是英文，**逐字稿用英文（可直接照读），每段下附中文对照**。总词数 ≈174，按 150 wpm 念约 70 秒，**留 20 秒给钱包确认与交易等待**——90 秒里，沉默的那 20 秒是设计好的，不是失误。
 
@@ -95,7 +95,7 @@ companions: PITCH.md, DEMO-SCRIPT.md, SUBMISSION.md, VERIFICATION.md
 
 ### 段 8 — 收尾（1:22–1:30）
 
-> Shared Deposit Passport: **pay a deposit once, rent from every merchant.** Devnet today, no real funds.
+> Shared Deposit: **pay a deposit once, rent from every merchant.** Devnet today, no real funds.
 
 **中文**：共享押金护照：**存一次押金，租遍所有商户。** 今天是 devnet，没有真钱。
 

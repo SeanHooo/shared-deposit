@@ -32,7 +32,7 @@ commit makes that line the broken link instead of the demo.
 
 ## Project name
 
-Shared Deposit Passport
+Shared Deposit
 
 ## Elevator pitch (one line, ~15 words)
 
@@ -43,7 +43,7 @@ passport, reusable the moment you return.
 
 Short-term rentals make the deposit the friction, not the rental: rent from four
 vendors in one day and you pay four deposits, file four refund requests, and wait
-days for each. Shared Deposit Passport puts one deposit in a Solana program. Each
+days for each. Shared Deposit puts one deposit in a Solana program. Each
 merchant can lock only what the guest signs for that one rental, and returning
 releases it straight back — ready for the next merchant.
 
@@ -100,7 +100,7 @@ single-chain by design, so leave the others unselected rather than padding them.
 
 Solana is the only chain we use — one chain, by design.
 
-Shared Deposit Passport is an Anchor program deployed on **Solana devnet**
+Shared Deposit is an Anchor program deployed on **Solana devnet**
 (program `Bw5pP788g5eK117b7oA1dzSMg4N5ZG5vjcHpEKTzzN2o`). A single chain is a
 requirement, not a limitation: the passport only works if every merchant can
 settle the same balance in one place, and a multi-chain passport would fragment
@@ -201,7 +201,7 @@ Network:             Solana devnet — no real funds
 
 # Video description (paste into the video's description field)
 
-**Shared Deposit Passport — pay a deposit once, rent from every merchant.**
+**Shared Deposit — pay a deposit once, rent from every merchant.**
 
 Rent four things in one day and you pay four deposits, file four refund requests
 and wait days for each. This is one deposit, held by a Solana program, that any

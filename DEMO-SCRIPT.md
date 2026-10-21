@@ -60,7 +60,7 @@ click misbehaves on camera.
 | # | Time | On screen (exact clicks) | English caption / narration |
 | --- | --- | --- | --- |
 | 1 | 0:00–0:20 | Title card, then the app with `Guest` connected, Guest console | **"Renting four things in one day means paying four deposits. Four payments. Four refunds. Four waits."** — Problem, stated as the customer's cost |
-| 2 | 0:20–0:35 | Gesture at the asset list showing `Available / Locked / Frozen / Withdrawable` balances, then at the header band with `On-chain state synced · slot N` and `#/guest` | **"Shared Deposit Passport: one deposit, held by a Solana program, reusable at every merchant."** |
+| 2 | 0:20–0:35 | Gesture at the asset list showing `Available / Locked / Frozen / Withdrawable` balances, then at the header band with `On-chain state synced · slot N` and `#/guest` | **"Shared Deposit: one deposit, held by a Solana program, reusable at every merchant."** |
 | 3 | 0:35–0:55 | → merchant `Bikes`, item `bike-42`, due date, click **Confirm single-use authorization** | **"The guest authorizes one rental, for one merchant, one amount, one item. Funds do not move yet — this is a signed authorization, valid for a single use."** Point out the confirmation summary text: it lists merchant, item, amount, due date |
 | 4 | 0:55–1:15 | Switch Phantom to `Bikes`. **Merchant** console. Click **Accept and lock deposit** | **"Only the merchant the guest named can act on it. The lock is the only point where funds move — from available to locked, inside the same passport."** |
 | 5 | 1:15–1:35 | Still `Bikes`. **Return evidence**: paste an HTTPS photo URL, choose a file, hash appears. Click **Return in good condition** | **"Return evidence: the file's SHA-256 is computed in the browser. Nothing is uploaded — the chain stores the hash and the reference."** |
@@ -68,7 +68,7 @@ click misbehaves on camera.
 | 7 | **1:55–2:20** | → merchant `Camping`, item `tent-7`, amount 5, click **Confirm single-use authorization** → switch to `Camping` → **Accept and lock deposit** → paste the same evidence URL as shot 5 → **Return in good condition** | **THE MONEY SHOT.** **"Same 20 USDC. Second merchant. No second deposit."** Add a lower-third: `0 USDC re-deposited`. Then switch back to `Guest` and hold on the balance |
 | 8 | 2:20–2:35 | `Guest`. Click **Withdraw to wallet** | **"The guest withdraws whatever is not locked — one asset can be withdrawn while another is still locked behind a rental."** |
 | 9 | 2:35–2:50 | Cut to `app/e2e/product.spec.ts`, `app/e2e/harness.ts` and `VERIFICATION.md` in an editor, then a still frame of the e2e run | **"This is not a happy-path prototype. Real SBF integration tests cover foreign mints, wrong signers, replayed nonces, revoked and expired authorizations, concurrent locks, and duplicate transitions. The 180-day keeper release is proven by time travel, not by waiting."** The stills in `docs/screenshots/` are captured by that same run |
-| 10 | 2:50–3:00 | Title card: problem / solution / program address / repo | **"Shared Deposit Passport. Pay a deposit once. Rent from every merchant."** |
+| 10 | 2:50–3:00 | Title card: problem / solution / program address / repo | **"Shared Deposit. Pay a deposit once. Rent from every merchant."** |
 
 ## The three things that must land
 
@@ -122,5 +122,5 @@ Say these plainly. They cost you nothing and buy credibility:
 - YouTube (unlisted or public) or Loom, 1080p, with English captions if the tool
   offers auto-generation. The interface is English, so captions mostly help
   viewers watching muted, which is how a judge skims first.
-- Title: `Shared Deposit Passport — pay a deposit once, rent from every merchant`
+- Title: `Shared Deposit — pay a deposit once, rent from every merchant`
 - Paste the link into the Colosseum form and into `README.md`.

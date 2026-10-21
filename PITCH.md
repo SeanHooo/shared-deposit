@@ -6,7 +6,7 @@ status: hackathon-submission
 event: Colosseum
 ---
 
-# Shared Deposit Passport — Pitch
+# Shared Deposit — Pitch
 
 ## One-liner
 

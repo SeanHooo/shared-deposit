@@ -11,7 +11,7 @@
 //
 // The program numbers its own errors from 6000 in the order of its ErrorCode enum, so a
 // hex code resolves back to a name. A test asserts this table against
-// programs/shared-deposit-passport/src/lib.rs so the numbers cannot drift silently.
+// programs/shared-deposit/src/lib.rs so the numbers cannot drift silently.
 const PROGRAM_ERRORS: Record<number, string> = {
   6000: "InvalidAsset — Invalid or unregistered asset. The mint is not one of the two the platform registered, or its decimals are not 6.",
   6001: "InvalidAmount — Amount must be positive.",

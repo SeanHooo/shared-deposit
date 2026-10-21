@@ -138,7 +138,7 @@ describe.sequential(
         net.fundSol(who.address, 10_000_000_000);
       net.deploy({
         programId: p.PROGRAM_ADDRESS,
-        soPath: "../target/deploy/shared_deposit_passport.so",
+        soPath: "../target/deploy/shared_deposit.so",
       });
       // Native deployment has no authority; model an operator-owned upgradeable deployment.
       const programData = await p.programDataAddress();

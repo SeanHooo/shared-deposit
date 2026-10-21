@@ -49,7 +49,7 @@ test("the deployed build loads, reports devnet and reads the chain", async ({
   await page.goto(demoUrl!, { waitUntil: "load" });
 
   // Without a wallet the app must still be honest about what it is and where it points.
-  await expect(page).toHaveTitle("Shared Deposit Passport");
+  await expect(page).toHaveTitle("Shared Deposit");
   await expect(page.getByText("No wallet connected")).toBeVisible();
   await expect(page.getByText("Solana devnet")).toBeVisible();
   for (const role of ["Guest", "Merchant", "Operator", "Keeper"])

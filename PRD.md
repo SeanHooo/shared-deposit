@@ -5,7 +5,7 @@ created: 2026-10-07
 status: draft
 ---
 
-# PRD: Shared Deposit Passport
+# PRD: Shared Deposit
 
 ## Overview
 

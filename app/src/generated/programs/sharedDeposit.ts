@@ -129,10 +129,10 @@ import {
   findRegisterMerchantMerchantPda,
 } from "../pdas";
 
-export const SHARED_DEPOSIT_PASSPORT_PROGRAM_ADDRESS =
+export const SHARED_DEPOSIT_PROGRAM_ADDRESS =
   "Bw5pP788g5eK117b7oA1dzSMg4N5ZG5vjcHpEKTzzN2o" as Address<"Bw5pP788g5eK117b7oA1dzSMg4N5ZG5vjcHpEKTzzN2o">;
 
-export enum SharedDepositPassportAccount {
+export enum SharedDepositAccount {
   DepositAccount,
   DepositPassport,
   Merchant,
@@ -141,9 +141,9 @@ export enum SharedDepositPassportAccount {
   RentalLock,
 }
 
-export function identifySharedDepositPassportAccount(
+export function identifySharedDepositAccount(
   account: { data: ReadonlyUint8Array } | ReadonlyUint8Array,
-): SharedDepositPassportAccount {
+): SharedDepositAccount {
   const data = "data" in account ? account.data : account;
   if (
     containsBytes(
@@ -154,7 +154,7 @@ export function identifySharedDepositPassportAccount(
       0,
     )
   ) {
-    return SharedDepositPassportAccount.DepositAccount;
+    return SharedDepositAccount.DepositAccount;
   }
   if (
     containsBytes(
@@ -165,7 +165,7 @@ export function identifySharedDepositPassportAccount(
       0,
     )
   ) {
-    return SharedDepositPassportAccount.DepositPassport;
+    return SharedDepositAccount.DepositPassport;
   }
   if (
     containsBytes(
@@ -176,7 +176,7 @@ export function identifySharedDepositPassportAccount(
       0,
     )
   ) {
-    return SharedDepositPassportAccount.Merchant;
+    return SharedDepositAccount.Merchant;
   }
   if (
     containsBytes(
@@ -187,7 +187,7 @@ export function identifySharedDepositPassportAccount(
       0,
     )
   ) {
-    return SharedDepositPassportAccount.MerchantAuthorization;
+    return SharedDepositAccount.MerchantAuthorization;
   }
   if (
     containsBytes(
@@ -198,7 +198,7 @@ export function identifySharedDepositPassportAccount(
       0,
     )
   ) {
-    return SharedDepositPassportAccount.Platform;
+    return SharedDepositAccount.Platform;
   }
   if (
     containsBytes(
@@ -209,21 +209,21 @@ export function identifySharedDepositPassportAccount(
       0,
     )
   ) {
-    return SharedDepositPassportAccount.RentalLock;
+    return SharedDepositAccount.RentalLock;
   }
   throw new SolanaError(
     SOLANA_ERROR__PROGRAM_CLIENTS__FAILED_TO_IDENTIFY_ACCOUNT,
-    { accountData: data, programName: "sharedDepositPassport" },
+    { accountData: data, programName: "sharedDeposit" },
   );
 }
 
-export enum SharedDepositPassportEvent {
+export enum SharedDepositEvent {
   PassportEvent,
 }
 
-export function identifySharedDepositPassportEvent(
+export function identifySharedDepositEvent(
   event: { data: ReadonlyUint8Array } | ReadonlyUint8Array,
-): SharedDepositPassportEvent {
+): SharedDepositEvent {
   const data = "data" in event ? event.data : event;
   if (
     containsBytes(
@@ -234,14 +234,14 @@ export function identifySharedDepositPassportEvent(
       0,
     )
   ) {
-    return SharedDepositPassportEvent.PassportEvent;
+    return SharedDepositEvent.PassportEvent;
   }
   throw new Error(
-    "The provided event could not be identified as a sharedDepositPassport event.",
+    "The provided event could not be identified as a sharedDeposit event.",
   );
 }
 
-export enum SharedDepositPassportInstruction {
+export enum SharedDepositInstruction {
   AuthorizeRental,
   ConfirmCompensated,
   DepositSol,
@@ -260,9 +260,9 @@ export enum SharedDepositPassportInstruction {
   WithdrawSpl,
 }
 
-export function identifySharedDepositPassportInstruction(
+export function identifySharedDepositInstruction(
   instruction: { data: ReadonlyUint8Array } | ReadonlyUint8Array,
-): SharedDepositPassportInstruction {
+): SharedDepositInstruction {
   const data = "data" in instruction ? instruction.data : instruction;
   if (
     containsBytes(
@@ -273,7 +273,7 @@ export function identifySharedDepositPassportInstruction(
       0,
     )
   ) {
-    return SharedDepositPassportInstruction.AuthorizeRental;
+    return SharedDepositInstruction.AuthorizeRental;
   }
   if (
     containsBytes(
@@ -284,7 +284,7 @@ export function identifySharedDepositPassportInstruction(
       0,
     )
   ) {
-    return SharedDepositPassportInstruction.ConfirmCompensated;
+    return SharedDepositInstruction.ConfirmCompensated;
   }
   if (
     containsBytes(
@@ -295,7 +295,7 @@ export function identifySharedDepositPassportInstruction(
       0,
     )
   ) {
-    return SharedDepositPassportInstruction.DepositSol;
+    return SharedDepositInstruction.DepositSol;
   }
   if (
     containsBytes(
@@ -306,7 +306,7 @@ export function identifySharedDepositPassportInstruction(
       0,
     )
   ) {
-    return SharedDepositPassportInstruction.DepositSpl;
+    return SharedDepositInstruction.DepositSpl;
   }
   if (
     containsBytes(
@@ -317,7 +317,7 @@ export function identifySharedDepositPassportInstruction(
       0,
     )
   ) {
-    return SharedDepositPassportInstruction.InitializePassport;
+    return SharedDepositInstruction.InitializePassport;
   }
   if (
     containsBytes(
@@ -328,7 +328,7 @@ export function identifySharedDepositPassportInstruction(
       0,
     )
   ) {
-    return SharedDepositPassportInstruction.InitializePlatform;
+    return SharedDepositInstruction.InitializePlatform;
   }
   if (
     containsBytes(
@@ -339,7 +339,7 @@ export function identifySharedDepositPassportInstruction(
       0,
     )
   ) {
-    return SharedDepositPassportInstruction.InitializeSolAccount;
+    return SharedDepositInstruction.InitializeSolAccount;
   }
   if (
     containsBytes(
@@ -350,7 +350,7 @@ export function identifySharedDepositPassportInstruction(
       0,
     )
   ) {
-    return SharedDepositPassportInstruction.InitializeSplAccount;
+    return SharedDepositInstruction.InitializeSplAccount;
   }
   if (
     containsBytes(
@@ -361,7 +361,7 @@ export function identifySharedDepositPassportInstruction(
       0,
     )
   ) {
-    return SharedDepositPassportInstruction.KeeperRelease;
+    return SharedDepositInstruction.KeeperRelease;
   }
   if (
     containsBytes(
@@ -372,7 +372,7 @@ export function identifySharedDepositPassportInstruction(
       0,
     )
   ) {
-    return SharedDepositPassportInstruction.LockDeposit;
+    return SharedDepositInstruction.LockDeposit;
   }
   if (
     containsBytes(
@@ -383,7 +383,7 @@ export function identifySharedDepositPassportInstruction(
       0,
     )
   ) {
-    return SharedDepositPassportInstruction.RecordReturn;
+    return SharedDepositInstruction.RecordReturn;
   }
   if (
     containsBytes(
@@ -394,7 +394,7 @@ export function identifySharedDepositPassportInstruction(
       0,
     )
   ) {
-    return SharedDepositPassportInstruction.RegisterMerchant;
+    return SharedDepositInstruction.RegisterMerchant;
   }
   if (
     containsBytes(
@@ -405,7 +405,7 @@ export function identifySharedDepositPassportInstruction(
       0,
     )
   ) {
-    return SharedDepositPassportInstruction.RevokeAuthorization;
+    return SharedDepositInstruction.RevokeAuthorization;
   }
   if (
     containsBytes(
@@ -416,7 +416,7 @@ export function identifySharedDepositPassportInstruction(
       0,
     )
   ) {
-    return SharedDepositPassportInstruction.SetMerchantActive;
+    return SharedDepositInstruction.SetMerchantActive;
   }
   if (
     containsBytes(
@@ -427,7 +427,7 @@ export function identifySharedDepositPassportInstruction(
       0,
     )
   ) {
-    return SharedDepositPassportInstruction.WithdrawSol;
+    return SharedDepositInstruction.WithdrawSol;
   }
   if (
     containsBytes(
@@ -438,180 +438,180 @@ export function identifySharedDepositPassportInstruction(
       0,
     )
   ) {
-    return SharedDepositPassportInstruction.WithdrawSpl;
+    return SharedDepositInstruction.WithdrawSpl;
   }
   throw new SolanaError(
     SOLANA_ERROR__PROGRAM_CLIENTS__FAILED_TO_IDENTIFY_INSTRUCTION,
-    { instructionData: data, programName: "sharedDepositPassport" },
+    { instructionData: data, programName: "sharedDeposit" },
   );
 }
 
-export type ParsedSharedDepositPassportInstruction<
+export type ParsedSharedDepositInstruction<
   TProgram extends string = "Bw5pP788g5eK117b7oA1dzSMg4N5ZG5vjcHpEKTzzN2o",
 > =
   | ({
-      instructionType: SharedDepositPassportInstruction.AuthorizeRental;
+      instructionType: SharedDepositInstruction.AuthorizeRental;
     } & ParsedAuthorizeRentalInstruction<TProgram>)
   | ({
-      instructionType: SharedDepositPassportInstruction.ConfirmCompensated;
+      instructionType: SharedDepositInstruction.ConfirmCompensated;
     } & ParsedConfirmCompensatedInstruction<TProgram>)
   | ({
-      instructionType: SharedDepositPassportInstruction.DepositSol;
+      instructionType: SharedDepositInstruction.DepositSol;
     } & ParsedDepositSolInstruction<TProgram>)
   | ({
-      instructionType: SharedDepositPassportInstruction.DepositSpl;
+      instructionType: SharedDepositInstruction.DepositSpl;
     } & ParsedDepositSplInstruction<TProgram>)
   | ({
-      instructionType: SharedDepositPassportInstruction.InitializePassport;
+      instructionType: SharedDepositInstruction.InitializePassport;
     } & ParsedInitializePassportInstruction<TProgram>)
   | ({
-      instructionType: SharedDepositPassportInstruction.InitializePlatform;
+      instructionType: SharedDepositInstruction.InitializePlatform;
     } & ParsedInitializePlatformInstruction<TProgram>)
   | ({
-      instructionType: SharedDepositPassportInstruction.InitializeSolAccount;
+      instructionType: SharedDepositInstruction.InitializeSolAccount;
     } & ParsedInitializeSolAccountInstruction<TProgram>)
   | ({
-      instructionType: SharedDepositPassportInstruction.InitializeSplAccount;
+      instructionType: SharedDepositInstruction.InitializeSplAccount;
     } & ParsedInitializeSplAccountInstruction<TProgram>)
   | ({
-      instructionType: SharedDepositPassportInstruction.KeeperRelease;
+      instructionType: SharedDepositInstruction.KeeperRelease;
     } & ParsedKeeperReleaseInstruction<TProgram>)
   | ({
-      instructionType: SharedDepositPassportInstruction.LockDeposit;
+      instructionType: SharedDepositInstruction.LockDeposit;
     } & ParsedLockDepositInstruction<TProgram>)
   | ({
-      instructionType: SharedDepositPassportInstruction.RecordReturn;
+      instructionType: SharedDepositInstruction.RecordReturn;
     } & ParsedRecordReturnInstruction<TProgram>)
   | ({
-      instructionType: SharedDepositPassportInstruction.RegisterMerchant;
+      instructionType: SharedDepositInstruction.RegisterMerchant;
     } & ParsedRegisterMerchantInstruction<TProgram>)
   | ({
-      instructionType: SharedDepositPassportInstruction.RevokeAuthorization;
+      instructionType: SharedDepositInstruction.RevokeAuthorization;
     } & ParsedRevokeAuthorizationInstruction<TProgram>)
   | ({
-      instructionType: SharedDepositPassportInstruction.SetMerchantActive;
+      instructionType: SharedDepositInstruction.SetMerchantActive;
     } & ParsedSetMerchantActiveInstruction<TProgram>)
   | ({
-      instructionType: SharedDepositPassportInstruction.WithdrawSol;
+      instructionType: SharedDepositInstruction.WithdrawSol;
     } & ParsedWithdrawSolInstruction<TProgram>)
   | ({
-      instructionType: SharedDepositPassportInstruction.WithdrawSpl;
+      instructionType: SharedDepositInstruction.WithdrawSpl;
     } & ParsedWithdrawSplInstruction<TProgram>);
 
-export function parseSharedDepositPassportInstruction<TProgram extends string>(
+export function parseSharedDepositInstruction<TProgram extends string>(
   instruction: Instruction<TProgram> & InstructionWithData<ReadonlyUint8Array>,
-): ParsedSharedDepositPassportInstruction<TProgram> {
-  const instructionType = identifySharedDepositPassportInstruction(instruction);
+): ParsedSharedDepositInstruction<TProgram> {
+  const instructionType = identifySharedDepositInstruction(instruction);
   switch (instructionType) {
-    case SharedDepositPassportInstruction.AuthorizeRental: {
+    case SharedDepositInstruction.AuthorizeRental: {
       assertIsInstructionWithAccounts(instruction);
       return {
-        instructionType: SharedDepositPassportInstruction.AuthorizeRental,
+        instructionType: SharedDepositInstruction.AuthorizeRental,
         ...parseAuthorizeRentalInstruction(instruction),
       };
     }
-    case SharedDepositPassportInstruction.ConfirmCompensated: {
+    case SharedDepositInstruction.ConfirmCompensated: {
       assertIsInstructionWithAccounts(instruction);
       return {
-        instructionType: SharedDepositPassportInstruction.ConfirmCompensated,
+        instructionType: SharedDepositInstruction.ConfirmCompensated,
         ...parseConfirmCompensatedInstruction(instruction),
       };
     }
-    case SharedDepositPassportInstruction.DepositSol: {
+    case SharedDepositInstruction.DepositSol: {
       assertIsInstructionWithAccounts(instruction);
       return {
-        instructionType: SharedDepositPassportInstruction.DepositSol,
+        instructionType: SharedDepositInstruction.DepositSol,
         ...parseDepositSolInstruction(instruction),
       };
     }
-    case SharedDepositPassportInstruction.DepositSpl: {
+    case SharedDepositInstruction.DepositSpl: {
       assertIsInstructionWithAccounts(instruction);
       return {
-        instructionType: SharedDepositPassportInstruction.DepositSpl,
+        instructionType: SharedDepositInstruction.DepositSpl,
         ...parseDepositSplInstruction(instruction),
       };
     }
-    case SharedDepositPassportInstruction.InitializePassport: {
+    case SharedDepositInstruction.InitializePassport: {
       assertIsInstructionWithAccounts(instruction);
       return {
-        instructionType: SharedDepositPassportInstruction.InitializePassport,
+        instructionType: SharedDepositInstruction.InitializePassport,
         ...parseInitializePassportInstruction(instruction),
       };
     }
-    case SharedDepositPassportInstruction.InitializePlatform: {
+    case SharedDepositInstruction.InitializePlatform: {
       assertIsInstructionWithAccounts(instruction);
       return {
-        instructionType: SharedDepositPassportInstruction.InitializePlatform,
+        instructionType: SharedDepositInstruction.InitializePlatform,
         ...parseInitializePlatformInstruction(instruction),
       };
     }
-    case SharedDepositPassportInstruction.InitializeSolAccount: {
+    case SharedDepositInstruction.InitializeSolAccount: {
       assertIsInstructionWithAccounts(instruction);
       return {
-        instructionType: SharedDepositPassportInstruction.InitializeSolAccount,
+        instructionType: SharedDepositInstruction.InitializeSolAccount,
         ...parseInitializeSolAccountInstruction(instruction),
       };
     }
-    case SharedDepositPassportInstruction.InitializeSplAccount: {
+    case SharedDepositInstruction.InitializeSplAccount: {
       assertIsInstructionWithAccounts(instruction);
       return {
-        instructionType: SharedDepositPassportInstruction.InitializeSplAccount,
+        instructionType: SharedDepositInstruction.InitializeSplAccount,
         ...parseInitializeSplAccountInstruction(instruction),
       };
     }
-    case SharedDepositPassportInstruction.KeeperRelease: {
+    case SharedDepositInstruction.KeeperRelease: {
       assertIsInstructionWithAccounts(instruction);
       return {
-        instructionType: SharedDepositPassportInstruction.KeeperRelease,
+        instructionType: SharedDepositInstruction.KeeperRelease,
         ...parseKeeperReleaseInstruction(instruction),
       };
     }
-    case SharedDepositPassportInstruction.LockDeposit: {
+    case SharedDepositInstruction.LockDeposit: {
       assertIsInstructionWithAccounts(instruction);
       return {
-        instructionType: SharedDepositPassportInstruction.LockDeposit,
+        instructionType: SharedDepositInstruction.LockDeposit,
         ...parseLockDepositInstruction(instruction),
       };
     }
-    case SharedDepositPassportInstruction.RecordReturn: {
+    case SharedDepositInstruction.RecordReturn: {
       assertIsInstructionWithAccounts(instruction);
       return {
-        instructionType: SharedDepositPassportInstruction.RecordReturn,
+        instructionType: SharedDepositInstruction.RecordReturn,
         ...parseRecordReturnInstruction(instruction),
       };
     }
-    case SharedDepositPassportInstruction.RegisterMerchant: {
+    case SharedDepositInstruction.RegisterMerchant: {
       assertIsInstructionWithAccounts(instruction);
       return {
-        instructionType: SharedDepositPassportInstruction.RegisterMerchant,
+        instructionType: SharedDepositInstruction.RegisterMerchant,
         ...parseRegisterMerchantInstruction(instruction),
       };
     }
-    case SharedDepositPassportInstruction.RevokeAuthorization: {
+    case SharedDepositInstruction.RevokeAuthorization: {
       assertIsInstructionWithAccounts(instruction);
       return {
-        instructionType: SharedDepositPassportInstruction.RevokeAuthorization,
+        instructionType: SharedDepositInstruction.RevokeAuthorization,
         ...parseRevokeAuthorizationInstruction(instruction),
       };
     }
-    case SharedDepositPassportInstruction.SetMerchantActive: {
+    case SharedDepositInstruction.SetMerchantActive: {
       assertIsInstructionWithAccounts(instruction);
       return {
-        instructionType: SharedDepositPassportInstruction.SetMerchantActive,
+        instructionType: SharedDepositInstruction.SetMerchantActive,
         ...parseSetMerchantActiveInstruction(instruction),
       };
     }
-    case SharedDepositPassportInstruction.WithdrawSol: {
+    case SharedDepositInstruction.WithdrawSol: {
       assertIsInstructionWithAccounts(instruction);
       return {
-        instructionType: SharedDepositPassportInstruction.WithdrawSol,
+        instructionType: SharedDepositInstruction.WithdrawSol,
         ...parseWithdrawSolInstruction(instruction),
       };
     }
-    case SharedDepositPassportInstruction.WithdrawSpl: {
+    case SharedDepositInstruction.WithdrawSpl: {
       assertIsInstructionWithAccounts(instruction);
       return {
-        instructionType: SharedDepositPassportInstruction.WithdrawSpl,
+        instructionType: SharedDepositInstruction.WithdrawSpl,
         ...parseWithdrawSplInstruction(instruction),
       };
     }
@@ -620,22 +620,22 @@ export function parseSharedDepositPassportInstruction<TProgram extends string>(
         SOLANA_ERROR__PROGRAM_CLIENTS__UNRECOGNIZED_INSTRUCTION_TYPE,
         {
           instructionType: instructionType as string,
-          programName: "sharedDepositPassport",
+          programName: "sharedDeposit",
         },
       );
   }
 }
 
-export type SharedDepositPassportPlugin = {
-  accounts: SharedDepositPassportPluginAccounts;
-  instructions: SharedDepositPassportPluginInstructions;
-  pdas: SharedDepositPassportPluginPdas;
-  identifyAccount: typeof identifySharedDepositPassportAccount;
-  identifyInstruction: typeof identifySharedDepositPassportInstruction;
-  parseInstruction: typeof parseSharedDepositPassportInstruction;
+export type SharedDepositPlugin = {
+  accounts: SharedDepositPluginAccounts;
+  instructions: SharedDepositPluginInstructions;
+  pdas: SharedDepositPluginPdas;
+  identifyAccount: typeof identifySharedDepositAccount;
+  identifyInstruction: typeof identifySharedDepositInstruction;
+  parseInstruction: typeof parseSharedDepositInstruction;
 };
 
-export type SharedDepositPassportPluginAccounts = {
+export type SharedDepositPluginAccounts = {
   depositAccount: ReturnType<typeof getDepositAccountCodec> &
     SelfFetchFunctions<DepositAccountArgs, DepositAccount>;
   depositPassport: ReturnType<typeof getDepositPassportCodec> &
@@ -650,7 +650,7 @@ export type SharedDepositPassportPluginAccounts = {
     SelfFetchFunctions<RentalLockArgs, RentalLock>;
 };
 
-export type SharedDepositPassportPluginInstructions = {
+export type SharedDepositPluginInstructions = {
   authorizeRental: (
     input: AuthorizeRentalAsyncInput,
   ) => ReturnType<typeof getAuthorizeRentalInstructionAsync> &
@@ -717,7 +717,7 @@ export type SharedDepositPassportPluginInstructions = {
     SelfPlanAndSendFunctions;
 };
 
-export type SharedDepositPassportPluginPdas = {
+export type SharedDepositPluginPdas = {
   passport: typeof findPassportPda;
   authorization: typeof findAuthorizationPda;
   merchant: typeof findMerchantPda;
@@ -727,21 +727,18 @@ export type SharedDepositPassportPluginPdas = {
   registerMerchantMerchant: typeof findRegisterMerchantMerchantPda;
 };
 
-export type SharedDepositPassportPluginRequirements = ClientWithRpc<
+export type SharedDepositPluginRequirements = ClientWithRpc<
   GetAccountInfoApi & GetMultipleAccountsApi
 > &
   ClientWithTransactionPlanning &
   ClientWithTransactionSending;
 
-export function sharedDepositPassportProgram() {
-  return <T extends SharedDepositPassportPluginRequirements>(
+export function sharedDepositProgram() {
+  return <T extends SharedDepositPluginRequirements>(
     client: T,
-  ): ExtendedClient<
-    T,
-    { sharedDepositPassport: SharedDepositPassportPlugin }
-  > => {
+  ): ExtendedClient<T, { sharedDeposit: SharedDepositPlugin }> => {
     return extendClient(client, {
-      sharedDepositPassport: <SharedDepositPassportPlugin>{
+      sharedDeposit: <SharedDepositPlugin>{
         accounts: {
           depositAccount: addSelfFetchFunctions(
             client,
@@ -851,9 +848,9 @@ export function sharedDepositPassportProgram() {
             findInitializeSplAccountDepositAccountPda,
           registerMerchantMerchant: findRegisterMerchantMerchantPda,
         },
-        identifyAccount: identifySharedDepositPassportAccount,
-        identifyInstruction: identifySharedDepositPassportInstruction,
-        parseInstruction: parseSharedDepositPassportInstruction,
+        identifyAccount: identifySharedDepositAccount,
+        identifyInstruction: identifySharedDepositInstruction,
+        parseInstruction: parseSharedDepositInstruction,
       },
     });
   };

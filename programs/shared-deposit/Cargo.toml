@@ -1,12 +1,12 @@
 [package]
-name = "shared-deposit-passport"
+name = "shared-deposit"
 version = "0.1.0"
-description = "Shared Deposit Passport MVP"
+description = "Shared Deposit MVP"
 edition = "2021"
 
 [lib]
 crate-type = ["cdylib", "lib"]
-name = "shared_deposit_passport"
+name = "shared_deposit"
 
 [features]
 no-entrypoint = []

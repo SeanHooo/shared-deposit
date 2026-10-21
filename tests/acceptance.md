@@ -5,7 +5,7 @@ created: 2026-10-11
 status: implemented-local
 ---
 
-# Acceptance Criteria: Shared Deposit Passport MVP
+# Acceptance Criteria: Shared Deposit MVP
 
 These scenarios are the implementation handoff derived from `PRD.md` and the edge-case catalog in `RESEARCH.md`.
 

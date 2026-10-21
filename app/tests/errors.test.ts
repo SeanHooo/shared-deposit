@@ -79,7 +79,7 @@ describe("describeError", () => {
 
   it("matches the program's own ErrorCode enum, so the numbers cannot drift", () => {
     const source = readFileSync(
-      new URL("../../programs/shared-deposit-passport/src/lib.rs", import.meta.url),
+      new URL("../../programs/shared-deposit/src/lib.rs", import.meta.url),
       "utf8",
     );
     const enumBody = source.slice(source.indexOf("pub enum ErrorCode"));

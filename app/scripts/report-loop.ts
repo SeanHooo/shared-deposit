@@ -20,7 +20,7 @@ function valueOf(flag: string) {
 const rpcUrl = valueOf("--rpc") ?? "https://api.devnet.solana.com";
 const guestArg = valueOf("--guest") ?? args.find((a) => a.startsWith("guest="))?.slice(6);
 
-// Mirrors the constants in programs/shared-deposit-passport/src/lib.rs rather than
+// Mirrors the constants in programs/shared-deposit/src/lib.rs rather than
 // guessing them: ACTIVE 0, RETURNED 1, FROZEN 2, COMPENSATED 3, and the return statuses
 // that `record_return` accepts, where 0 is the good return that releases the funds and
 // 1 and 2 freeze them. 255 is the sentinel written when the lock is created.

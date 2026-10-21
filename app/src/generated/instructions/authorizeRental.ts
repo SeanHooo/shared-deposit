@@ -54,7 +54,7 @@ import {
   type ResolvedInstructionAccountMeta,
 } from "@solana/program-client-core";
 import { findAuthorizationPda, findPassportPda } from "../pdas";
-import { SHARED_DEPOSIT_PASSPORT_PROGRAM_ADDRESS } from "../programs";
+import { SHARED_DEPOSIT_PROGRAM_ADDRESS } from "../programs";
 
 export const AUTHORIZE_RENTAL_DISCRIMINATOR: ReadonlyUint8Array =
   new Uint8Array([164, 221, 157, 23, 223, 236, 103, 87]);
@@ -66,7 +66,7 @@ export function getAuthorizeRentalDiscriminatorBytes(): ReadonlyUint8Array {
 }
 
 export type AuthorizeRentalInstruction<
-  TProgram extends string = typeof SHARED_DEPOSIT_PASSPORT_PROGRAM_ADDRESS,
+  TProgram extends string = typeof SHARED_DEPOSIT_PROGRAM_ADDRESS,
   TAccountOwner extends string | AccountMeta<string> = string,
   TAccountPassport extends string | AccountMeta<string> = string,
   TAccountMerchant extends string | AccountMeta<string> = string,
@@ -185,8 +185,7 @@ export async function getAuthorizeRentalInstructionAsync<
   TAccountDepositAccount extends InstructionAccountInput,
   TAccountAuthorization extends InstructionAccountInput,
   TAccountSystemProgram extends InstructionAccountInput,
-  TProgramAddress extends Address =
-    typeof SHARED_DEPOSIT_PASSPORT_PROGRAM_ADDRESS,
+  TProgramAddress extends Address = typeof SHARED_DEPOSIT_PROGRAM_ADDRESS,
 >(
   input: AuthorizeRentalAsyncInput<
     TAccountOwner,
@@ -228,7 +227,7 @@ export async function getAuthorizeRentalInstructionAsync<
 > {
   // Program address.
   const programAddress =
-    config?.programAddress ?? SHARED_DEPOSIT_PASSPORT_PROGRAM_ADDRESS;
+    config?.programAddress ?? SHARED_DEPOSIT_PROGRAM_ADDRESS;
 
   // Account meta helper.
   const getAccountMeta = getAccountMetaFactory(programAddress, "programId");
@@ -372,8 +371,7 @@ export function getAuthorizeRentalInstruction<
   TAccountDepositAccount extends InstructionAccountInput,
   TAccountAuthorization extends InstructionAccountInput,
   TAccountSystemProgram extends InstructionAccountInput,
-  TProgramAddress extends Address =
-    typeof SHARED_DEPOSIT_PASSPORT_PROGRAM_ADDRESS,
+  TProgramAddress extends Address = typeof SHARED_DEPOSIT_PROGRAM_ADDRESS,
 >(
   input: AuthorizeRentalInput<
     TAccountOwner,
@@ -413,7 +411,7 @@ export function getAuthorizeRentalInstruction<
 > {
   // Program address.
   const programAddress =
-    config?.programAddress ?? SHARED_DEPOSIT_PASSPORT_PROGRAM_ADDRESS;
+    config?.programAddress ?? SHARED_DEPOSIT_PROGRAM_ADDRESS;
 
   // Account meta helper.
   const getAccountMeta = getAccountMetaFactory(programAddress, "programId");
@@ -504,7 +502,7 @@ export function getAuthorizeRentalInstruction<
 }
 
 export type ParsedAuthorizeRentalInstruction<
-  TProgram extends string = typeof SHARED_DEPOSIT_PASSPORT_PROGRAM_ADDRESS,
+  TProgram extends string = typeof SHARED_DEPOSIT_PROGRAM_ADDRESS,
   TAccountMetas extends readonly AccountMeta[] = readonly AccountMeta[],
 > = {
   programAddress: Address<TProgram>;

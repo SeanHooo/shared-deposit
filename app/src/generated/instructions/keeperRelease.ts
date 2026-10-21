@@ -38,7 +38,7 @@ import {
   type ResolvedInstructionAccount,
   type ResolvedInstructionAccountMeta,
 } from "@solana/program-client-core";
-import { SHARED_DEPOSIT_PASSPORT_PROGRAM_ADDRESS } from "../programs";
+import { SHARED_DEPOSIT_PROGRAM_ADDRESS } from "../programs";
 
 export const KEEPER_RELEASE_DISCRIMINATOR: ReadonlyUint8Array = new Uint8Array([
   106, 69, 14, 190, 82, 113, 182, 170,
@@ -51,7 +51,7 @@ export function getKeeperReleaseDiscriminatorBytes(): ReadonlyUint8Array {
 }
 
 export type KeeperReleaseInstruction<
-  TProgram extends string = typeof SHARED_DEPOSIT_PASSPORT_PROGRAM_ADDRESS,
+  TProgram extends string = typeof SHARED_DEPOSIT_PROGRAM_ADDRESS,
   TAccountKeeper extends string | AccountMeta<string> = string,
   TAccountPassport extends string | AccountMeta<string> = string,
   TAccountDepositAccount extends string | AccountMeta<string> = string,
@@ -125,8 +125,7 @@ export function getKeeperReleaseInstruction<
   TAccountPassport extends InstructionAccountInput,
   TAccountDepositAccount extends InstructionAccountInput,
   TAccountRentalLock extends InstructionAccountInput,
-  TProgramAddress extends Address =
-    typeof SHARED_DEPOSIT_PASSPORT_PROGRAM_ADDRESS,
+  TProgramAddress extends Address = typeof SHARED_DEPOSIT_PROGRAM_ADDRESS,
 >(
   input: KeeperReleaseInput<
     TAccountKeeper,
@@ -156,7 +155,7 @@ export function getKeeperReleaseInstruction<
 > {
   // Program address.
   const programAddress =
-    config?.programAddress ?? SHARED_DEPOSIT_PASSPORT_PROGRAM_ADDRESS;
+    config?.programAddress ?? SHARED_DEPOSIT_PROGRAM_ADDRESS;
 
   // Account meta helper.
   const getAccountMeta = getAccountMetaFactory(programAddress, "programId");
@@ -216,7 +215,7 @@ export function getKeeperReleaseInstruction<
 }
 
 export type ParsedKeeperReleaseInstruction<
-  TProgram extends string = typeof SHARED_DEPOSIT_PASSPORT_PROGRAM_ADDRESS,
+  TProgram extends string = typeof SHARED_DEPOSIT_PROGRAM_ADDRESS,
   TAccountMetas extends readonly AccountMeta[] = readonly AccountMeta[],
 > = {
   programAddress: Address<TProgram>;

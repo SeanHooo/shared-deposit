@@ -501,7 +501,7 @@ export function App() {
       <header className="topbar">
         <div>
           <p className="eyebrow">
-            SHARED DEPOSIT PASSPORT · {LOCAL ? "LOCALNET" : "DEVNET"}
+            SHARED DEPOSIT · {LOCAL ? "LOCALNET" : "DEVNET"}
           </p>
           <h1>One deposit. Every merchant.</h1>
           <p className="lead">

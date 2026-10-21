@@ -1,4 +1,4 @@
-# Shared Deposit Passport
+# Shared Deposit
 
 **Pay a deposit once. Rent from every merchant.**
 
@@ -55,7 +55,7 @@ flowchart TB
     KIT["@solana/kit + Wallet Standard"]
     GEN["src/generated — Codama client from the Anchor IDL"]
   end
-  subgraph Chain["programs/shared-deposit-passport — Anchor, Rust"]
+  subgraph Chain["programs/shared-deposit — Anchor, Rust"]
     IX["16 instructions"]
     ACC["6 account types, PDA derived"]
     EV["PassportEvent audit events"]
@@ -212,7 +212,7 @@ tested, but no real party runs them yet.
 
 ## Project layout
 
-- `programs/shared-deposit-passport/`: Anchor program and account/state machine.
+- `programs/shared-deposit/`: Anchor program and account/state machine.
 - `app/`: Vite + React client using Solana Kit and Wallet Standard.
 - `tests/acceptance.md`: Given/When/Then acceptance scenarios.
 - `RESEARCH.md`, `PRD.md`, `PLAN.md`: product and implementation sources of truth.
@@ -237,7 +237,7 @@ bash scripts/build.sh
 
 Never commit wallet keypairs, seed phrases, or devnet secrets. The compiled program itself
 **is** committed, deliberately:
-`programs/shared-deposit-passport/artifacts/shared_deposit_passport.so` is byte for byte the
+`programs/shared-deposit/artifacts/shared_deposit.so` is byte for byte the
 program deployed on devnet (`sha256 4acb2037…9841`), and `scripts/build.sh` overwrites it so
 a rebuild keeps the tests and the deployment on the same bytes. `target/` is generated and
 gitignored, so without this copy the suite could not run for anyone who cloned the
@@ -293,7 +293,7 @@ Program: `Bw5pP788g5eK117b7oA1dzSMg4N5ZG5vjcHpEKTzzN2o`.
 
 1. Fund the deployment authority wallet with devnet SOL. Check exact rent using
    `node scripts/deployment-check.mjs <PUBLIC_WALLET_ADDRESS>`.
-2. Review and execute `NO_DNA=1 solana program deploy --url devnet target/deploy/shared_deposit_passport.so`.
+2. Review and execute `NO_DNA=1 solana program deploy --url devnet target/deploy/shared_deposit.so`.
    The CLI must use the intended deployment wallet; never copy its keypair into this project.
 3. The **Operator** console can create two different six-decimal classic SPL test mints
    using wallet signing. Existing approved devnet test mints also work. These

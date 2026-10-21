@@ -55,8 +55,8 @@ export const shortAddress = (value: string) =>
  * whatever happens to be lying in a local build directory.
  */
 export const COMMITTED_SO =
-  "../programs/shared-deposit-passport/artifacts/shared_deposit_passport.so";
-export const BUILT_SO = "../target/deploy/shared_deposit_passport.so";
+  "../programs/shared-deposit/artifacts/shared_deposit.so";
+export const BUILT_SO = "../target/deploy/shared_deposit.so";
 
 /**
  * The artifact under test, with its digest so a failure can name the exact bytes.
@@ -81,7 +81,7 @@ export function programArtifact(): { path: string; sha256: string } {
   if (path === COMMITTED_SO && existsSync(BUILT_SO) && digest(BUILT_SO) !== sha256)
     console.warn(
       `\n[harness] ${BUILT_SO} differs from the committed artifact.\n` +
-        `[harness] Copy it into programs/shared-deposit-passport/artifacts/ to test your build,\n` +
+        `[harness] Copy it into programs/shared-deposit/artifacts/ to test your build,\n` +
         `[harness] otherwise the suite keeps exercising the committed one (${sha256.slice(0, 12)}…).\n`,
     );
   return { path, sha256 };

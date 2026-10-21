@@ -23,7 +23,7 @@ if (!wallet || !/^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(wallet)) {
 const PROGRAM = 'Bw5pP788g5eK117b7oA1dzSMg4N5ZG5vjcHpEKTzzN2o';
 const DEVNET_GENESIS = 'EtWTRABZaYq6iMfeYKouRu166VU2xqa1wcaWoxPkrZBG';
 const FAUCET = 'https://faucet.solana.com';
-const size = statSync(new URL('../target/deploy/shared_deposit_passport.so', import.meta.url)).size;
+const size = statSync(new URL('../target/deploy/shared_deposit.so', import.meta.url)).size;
 // ProgramData is the program bytes plus a 45-byte loader header.
 const programDataLen = size + 45;
 // Account storage overhead, whatever the cluster's rate turns out to be.

@@ -16,7 +16,7 @@ import {
 import * as sdk from "./generated/index";
 export * from "./generated/index";
 
-export const PROGRAM_ADDRESS = sdk.SHARED_DEPOSIT_PASSPORT_PROGRAM_ADDRESS;
+export const PROGRAM_ADDRESS = sdk.SHARED_DEPOSIT_PROGRAM_ADDRESS;
 export const ZERO = address("11111111111111111111111111111111");
 export const LOADER = address("BPFLoaderUpgradeab1e11111111111111111111111");
 const text = new TextEncoder();

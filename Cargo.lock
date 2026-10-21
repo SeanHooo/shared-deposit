@@ -1409,7 +1409,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "shared-deposit-passport"
+name = "shared-deposit"
 version = "0.1.0"
 dependencies = [
  "anchor-lang",

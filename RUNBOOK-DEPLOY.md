@@ -114,19 +114,19 @@ node scripts/deployment-check.mjs CMNgjVqaaopNCZTsKBzD2zVxxQHMrFejNiaQW9iVXrxF
 
 ## Step 1 — Deploy the program (~5 min)
 
-The `.so` is already built and current (`target/deploy/shared_deposit_passport.so`,
+The `.so` is already built and current (`target/deploy/shared_deposit.so`,
 506,456 bytes, SHA-256 `4acb20377c71624e2985c81a36bb099a643f938ca0808fccbd9b9bfc05c39841`).
 **Do not rebuild** unless you change the program — a rebuild costs time and risks
 a new hash.
 
 ```bash
-cd /Users/seanho/Desktop/shared-deposit-passport
+cd /Users/seanho/Desktop/shared-deposit
 export PATH="${HOME}/.local/share/solana/install/active_release/bin:${PATH}"
 RPC=https://api.devnet.solana.com   # or your Helius URL from step 0
 
 NO_DNA=1 solana program deploy --url "$RPC" \
-  --program-id target/deploy/shared_deposit_passport-keypair.json \
-  target/deploy/shared_deposit_passport.so
+  --program-id target/deploy/shared_deposit-keypair.json \
+  target/deploy/shared_deposit.so
 ```
 
 On a flaky link the upload may abort partway. It is resumable — rerun the same
@@ -151,7 +151,7 @@ Expect `Executable: true` and `Upgrade Authority: CMNgjVqaaopNCZTsKBzD2zVxxQHMrF
 
 The platform can only be initialized by the program **upgrade authority**, which is
 the wallet that deployed: `CMNgjVqaaopNCZTsKBzD2zVxxQHMrFejNiaQW9iVXrxF`. This is not a
-convention, it is enforced — `programs/shared-deposit-passport/src/lib.rs:552`
+convention, it is enforced — `programs/shared-deposit/src/lib.rs:552`
 constrains `program_data.upgrade_authority_address == Some(operator.key())`. That is
 the only place in the program that reads the upgrade authority; every other operator
 action compares against `Platform.operator`, which is set to whoever signs *this*

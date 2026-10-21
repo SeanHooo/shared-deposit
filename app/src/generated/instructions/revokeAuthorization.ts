@@ -41,7 +41,7 @@ import {
   type ResolvedInstructionAccountMeta,
 } from "@solana/program-client-core";
 import { findPassportPda } from "../pdas";
-import { SHARED_DEPOSIT_PASSPORT_PROGRAM_ADDRESS } from "../programs";
+import { SHARED_DEPOSIT_PROGRAM_ADDRESS } from "../programs";
 
 export const REVOKE_AUTHORIZATION_DISCRIMINATOR: ReadonlyUint8Array =
   new Uint8Array([222, 179, 207, 59, 191, 78, 24, 248]);
@@ -53,7 +53,7 @@ export function getRevokeAuthorizationDiscriminatorBytes(): ReadonlyUint8Array {
 }
 
 export type RevokeAuthorizationInstruction<
-  TProgram extends string = typeof SHARED_DEPOSIT_PASSPORT_PROGRAM_ADDRESS,
+  TProgram extends string = typeof SHARED_DEPOSIT_PROGRAM_ADDRESS,
   TAccountOwner extends string | AccountMeta<string> = string,
   TAccountPassport extends string | AccountMeta<string> = string,
   TAccountDepositAccount extends string | AccountMeta<string> = string,
@@ -131,8 +131,7 @@ export async function getRevokeAuthorizationInstructionAsync<
   TAccountPassport extends InstructionAccountInput,
   TAccountDepositAccount extends InstructionAccountInput,
   TAccountAuthorization extends InstructionAccountInput,
-  TProgramAddress extends Address =
-    typeof SHARED_DEPOSIT_PASSPORT_PROGRAM_ADDRESS,
+  TProgramAddress extends Address = typeof SHARED_DEPOSIT_PROGRAM_ADDRESS,
 >(
   input: RevokeAuthorizationAsyncInput<
     TAccountOwner,
@@ -164,7 +163,7 @@ export async function getRevokeAuthorizationInstructionAsync<
 > {
   // Program address.
   const programAddress =
-    config?.programAddress ?? SHARED_DEPOSIT_PASSPORT_PROGRAM_ADDRESS;
+    config?.programAddress ?? SHARED_DEPOSIT_PROGRAM_ADDRESS;
 
   // Account meta helper.
   const getAccountMeta = getAccountMetaFactory(programAddress, "programId");
@@ -255,8 +254,7 @@ export function getRevokeAuthorizationInstruction<
   TAccountPassport extends InstructionAccountInput,
   TAccountDepositAccount extends InstructionAccountInput,
   TAccountAuthorization extends InstructionAccountInput,
-  TProgramAddress extends Address =
-    typeof SHARED_DEPOSIT_PASSPORT_PROGRAM_ADDRESS,
+  TProgramAddress extends Address = typeof SHARED_DEPOSIT_PROGRAM_ADDRESS,
 >(
   input: RevokeAuthorizationInput<
     TAccountOwner,
@@ -286,7 +284,7 @@ export function getRevokeAuthorizationInstruction<
 > {
   // Program address.
   const programAddress =
-    config?.programAddress ?? SHARED_DEPOSIT_PASSPORT_PROGRAM_ADDRESS;
+    config?.programAddress ?? SHARED_DEPOSIT_PROGRAM_ADDRESS;
 
   // Account meta helper.
   const getAccountMeta = getAccountMetaFactory(programAddress, "programId");
@@ -346,7 +344,7 @@ export function getRevokeAuthorizationInstruction<
 }
 
 export type ParsedRevokeAuthorizationInstruction<
-  TProgram extends string = typeof SHARED_DEPOSIT_PASSPORT_PROGRAM_ADDRESS,
+  TProgram extends string = typeof SHARED_DEPOSIT_PROGRAM_ADDRESS,
   TAccountMetas extends readonly AccountMeta[] = readonly AccountMeta[],
 > = {
   programAddress: Address<TProgram>;
