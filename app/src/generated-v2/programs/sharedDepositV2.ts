@@ -120,7 +120,7 @@ import {
 } from "../pdas";
 
 export const SHARED_DEPOSIT_V2_PROGRAM_ADDRESS =
-  "BZnWbeR8y5C7WWWLatmmEmcbL2rXqMka5jTV2XsikdCM" as Address<"BZnWbeR8y5C7WWWLatmmEmcbL2rXqMka5jTV2XsikdCM">;
+  "5rnNqVQG4zy4JUYHWxCEaYsbBEpNu8fHLn9p2MsdrVfx" as Address<"5rnNqVQG4zy4JUYHWxCEaYsbBEpNu8fHLn9p2MsdrVfx">;
 
 export enum SharedDepositV2Account {
   DepositAccount,
@@ -413,7 +413,7 @@ export function identifySharedDepositV2Instruction(
 }
 
 export type ParsedSharedDepositV2Instruction<
-  TProgram extends string = "BZnWbeR8y5C7WWWLatmmEmcbL2rXqMka5jTV2XsikdCM",
+  TProgram extends string = "5rnNqVQG4zy4JUYHWxCEaYsbBEpNu8fHLn9p2MsdrVfx",
 > =
   | ({
       instructionType: SharedDepositV2Instruction.AuthorizeRental;

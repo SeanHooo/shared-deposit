@@ -1,5 +1,5 @@
 {
-  "address": "BZnWbeR8y5C7WWWLatmmEmcbL2rXqMka5jTV2XsikdCM",
+  "address": "5rnNqVQG4zy4JUYHWxCEaYsbBEpNu8fHLn9p2MsdrVfx",
   "metadata": {
     "name": "shared_deposit_v2",
     "version": "0.2.0",
@@ -854,7 +854,7 @@
         },
         {
           "name": "program",
-          "address": "BZnWbeR8y5C7WWWLatmmEmcbL2rXqMka5jTV2XsikdCM"
+          "address": "5rnNqVQG4zy4JUYHWxCEaYsbBEpNu8fHLn9p2MsdrVfx"
         },
         {
           "name": "program_data"

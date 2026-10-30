@@ -55,7 +55,7 @@ export type InitializePlatformInstruction<
   TProgram extends string = typeof SHARED_DEPOSIT_V2_PROGRAM_ADDRESS,
   TAccountOperator extends string | AccountMeta<string> = string,
   TAccountProgram extends string | AccountMeta<string> =
-    "BZnWbeR8y5C7WWWLatmmEmcbL2rXqMka5jTV2XsikdCM",
+    "5rnNqVQG4zy4JUYHWxCEaYsbBEpNu8fHLn9p2MsdrVfx",
   TAccountProgramData extends string | AccountMeta<string> = string,
   TAccountUsdcMint extends string | AccountMeta<string> = string,
   TAccountPlatform extends string | AccountMeta<string> = string,
@@ -230,7 +230,7 @@ export async function getInitializePlatformInstructionAsync<
   // Resolve default values.
   if (!accounts.program.value) {
     accounts.program.value =
-      "BZnWbeR8y5C7WWWLatmmEmcbL2rXqMka5jTV2XsikdCM" as Address<"BZnWbeR8y5C7WWWLatmmEmcbL2rXqMka5jTV2XsikdCM">;
+      "5rnNqVQG4zy4JUYHWxCEaYsbBEpNu8fHLn9p2MsdrVfx" as Address<"5rnNqVQG4zy4JUYHWxCEaYsbBEpNu8fHLn9p2MsdrVfx">;
   }
   if (!accounts.platform.value) {
     accounts.platform.value = await findPlatformPda({ programAddress });
@@ -390,7 +390,7 @@ export function getInitializePlatformInstruction<
   // Resolve default values.
   if (!accounts.program.value) {
     accounts.program.value =
-      "BZnWbeR8y5C7WWWLatmmEmcbL2rXqMka5jTV2XsikdCM" as Address<"BZnWbeR8y5C7WWWLatmmEmcbL2rXqMka5jTV2XsikdCM">;
+      "5rnNqVQG4zy4JUYHWxCEaYsbBEpNu8fHLn9p2MsdrVfx" as Address<"5rnNqVQG4zy4JUYHWxCEaYsbBEpNu8fHLn9p2MsdrVfx">;
   }
   if (!accounts.systemProgram.value) {
     accounts.systemProgram.value =

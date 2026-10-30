@@ -290,7 +290,7 @@ export async function buildApp(
       status: "ok" as const,
       service: "shared-deposit-api" as const,
       cluster: config.SOLANA_CLUSTER,
-      program: "BZnWbeR8y5C7WWWLatmmEmcbL2rXqMka5jTV2XsikdCM",
+      program: "5rnNqVQG4zy4JUYHWxCEaYsbBEpNu8fHLn9p2MsdrVfx",
       timestamp: new Date(now()).toISOString(),
       chainSource: chain.lastSource(),
       evidenceStorage: "metadata-only" as const,

@@ -12,7 +12,7 @@ import { findMerchantPda, findPassportPda } from "../../app/src/generated-v2/ind
 import { ChainUnavailableError } from "./errors.js";
 
 export const GENESIS_HASH_BY_CLUSTER = {
-  devnet: "EtWTRABZaYq6iMfeYKouRu166VU2xqa1",
+  devnet: "EtWTRABZaYq6iMfeYKouRu166VU2xqa1wcaWoxPkrZBG",
   "mainnet-beta": "5eykt4UsFv8P8NJdTREpY1vzqKqZKvdpKuc147dw2N9d",
 } as const;
 

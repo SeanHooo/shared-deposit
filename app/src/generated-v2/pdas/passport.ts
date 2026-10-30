@@ -23,7 +23,7 @@ export async function findPassportPda(
   config: { programAddress?: Address | undefined } = {},
 ): Promise<ProgramDerivedAddress> {
   const {
-    programAddress = "BZnWbeR8y5C7WWWLatmmEmcbL2rXqMka5jTV2XsikdCM" as Address<"BZnWbeR8y5C7WWWLatmmEmcbL2rXqMka5jTV2XsikdCM">,
+    programAddress = "5rnNqVQG4zy4JUYHWxCEaYsbBEpNu8fHLn9p2MsdrVfx" as Address<"5rnNqVQG4zy4JUYHWxCEaYsbBEpNu8fHLn9p2MsdrVfx">,
   } = config;
   return await getProgramDerivedAddress({
     programAddress,

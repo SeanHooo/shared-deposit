@@ -18,7 +18,7 @@ import type { AppConfig } from "../src/config.js";
 
 const ZERO = address("11111111111111111111111111111111");
 const USDC_MINT = address("4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU");
-const PROGRAM = address("BZnWbeR8y5C7WWWLatmmEmcbL2rXqMka5jTV2XsikdCM");
+const PROGRAM = address("5rnNqVQG4zy4JUYHWxCEaYsbBEpNu8fHLn9p2MsdrVfx");
 
 export type SyntheticWallet = {
   wallet: string;

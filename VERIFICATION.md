@@ -153,16 +153,40 @@ devnet evidence above and does not claim that v2 is deployed or production-ready
 | --- | --- |
 | Anchor build | `bash scripts/build.sh` passed with Anchor CLI 0.31.1, Solana CLI 2.3.0, and SBF platform-tools v1.57 |
 | Committed IDL | `programs/shared-deposit-v2/idl/shared_deposit_v2.json`, 55,314 bytes |
-| IDL SHA-256 | `c94c03a2589bbc32c3319e5e1c60d7a040376d9f9dabd623353c21ade9ca0dfe` |
+| IDL SHA-256 | `b4f6accda8741c0ec2a017fbf8c4d31281a3ae0998eea74d19e062d443d56922` |
 | Program artifact | `programs/shared-deposit-v2/artifacts/shared_deposit_v2.so`, 501,504 bytes |
-| Program SHA-256 | `afce4f16eefd40e8225422c1e8a8a34b83af132ac689667f4e4c2cace06f17ac` |
+| Program SHA-256 | `902a31e8defab69f8fa404837149eb682b7fedbd509ed69f1952d61e58e2133e` |
 | Generated-client drift | `bash scripts/check-generated-v2.sh` passed; the Codama output exactly matches the committed IDL |
 | Web tests | 41 passed across 7 files |
 | Web production build | `npm run build` passed; Vite emitted a 392.32 kB JavaScript bundle |
 | Surfpool v2 suite | 6 passed; the suite deploys the committed SBF artifact |
-| API typecheck and tests | TypeScript passed; 15 tests passed across 4 files |
+| API typecheck and tests | TypeScript passed; 16 tests passed across 4 files |
 | Rust workspace tests | 6 passed: 1 v1 and 5 v2 |
 | Whitespace check | `git diff --check` passed |
+
+### v2 devnet readiness, 2026-10-30
+
+Read-only checks against `https://api.devnet.solana.com` confirmed the full devnet
+genesis hash and the expected release artifact. They also confirmed that v2 has not
+been deployed: `getAccountInfo` returns `null` for the program address.
+
+| Check | Result |
+| --- | --- |
+| Cluster | Solana devnet, genesis `EtWTRABZaYq6iMfeYKouRu166VU2xqa1wcaWoxPkrZBG` |
+| RPC version | `4.4.0-beta.1` |
+| Program address | `5rnNqVQG4zy4JUYHWxCEaYsbBEpNu8fHLn9p2MsdrVfx` |
+| Program account | absent; `solana program show` reports that it cannot find the account |
+| Deploy payer | `CMNgjVqaaopNCZTsKBzD2zVxxQHMrFejNiaQW9iVXrxF` |
+| Payer balance | `0.771621062 SOL` |
+| ProgramData rent for the 501,504-byte artifact | `2.54858012 SOL`, before signature fees |
+| Recommended deploy balance | `3 SOL`; current shortfall is `2.228378938 SOL` |
+| Official devnet USDC mint | `4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU`, SPL Token, six decimals |
+
+The public devnet faucet has rate-limited this network address, and the official web
+faucet requires a human interactive sign-in. No transaction has been sent, no alternate
+USDC mint has been substituted, and no mainnet operation has been attempted. Deployment
+and initialization remain blocked until the payer is funded with devnet SOL and the
+operator wallet receives a small amount of official devnet USDC for the smoke test.
 
 The build prints Anchor/Rust `unexpected_cfgs` warnings from dependency and macro
 expansion, plus an Anchor `AccountInfo::realloc` deprecation warning. These are

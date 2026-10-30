@@ -14,6 +14,13 @@ function rpcReturning(genesisHash: string): Pick<V2Rpc, "getGenesisHash"> {
 }
 
 describe("Solana RPC cluster pinning", () => {
+  it("pins the full 44-character devnet genesis hash", () => {
+    expect(GENESIS_HASH_BY_CLUSTER.devnet).toBe(
+      "EtWTRABZaYq6iMfeYKouRu166VU2xqa1wcaWoxPkrZBG",
+    );
+    expect(GENESIS_HASH_BY_CLUSTER.devnet).toHaveLength(44);
+  });
+
   it("accepts only the configured public cluster genesis hash", async () => {
     await expect(
       assertExpectedCluster(

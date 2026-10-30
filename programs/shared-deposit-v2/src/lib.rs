@@ -2,7 +2,7 @@ use anchor_lang::prelude::*;
 use anchor_spl::associated_token::AssociatedToken;
 use anchor_spl::token::{self, Mint, Token, TokenAccount, Transfer};
 
-declare_id!("BZnWbeR8y5C7WWWLatmmEmcbL2rXqMka5jTV2XsikdCM");
+declare_id!("5rnNqVQG4zy4JUYHWxCEaYsbBEpNu8fHLn9p2MsdrVfx");
 
 pub const YEAR: i64 = 365 * 86_400;
 pub const TIMEOUT: i64 = 180 * 86_400;
