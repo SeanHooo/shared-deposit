@@ -1,0 +1,77 @@
+import { z } from "zod/v4";
+
+const walletAllowlist = z
+  .string()
+  .default("")
+  .transform((value) =>
+    value
+      .split(",")
+      .map((entry) => entry.trim())
+      .filter(Boolean),
+  );
+
+const rpcUrls = z
+  .string()
+  .default("https://api.devnet.solana.com")
+  .transform((value) =>
+    value
+      .split(",")
+      .map((entry) => entry.trim())
+      .filter(Boolean),
+  )
+  .pipe(z.array(z.url()).min(1));
+
+const configSchema = z.object({
+  NODE_ENV: z
+    .enum(["development", "test", "production"])
+    .default("development"),
+  HOST: z.string().default("127.0.0.1"),
+  PORT: z.coerce.number().int().min(1).max(65_535).default(8787),
+  SOLANA_CLUSTER: z
+    .enum(["localnet", "devnet", "mainnet-beta"])
+    .default("devnet"),
+  SOLANA_RPC_URLS: rpcUrls,
+  USDC_MINT: z.string().min(32).max(44).optional(),
+  SIWS_DOMAIN: z.string().min(1).default("localhost:5173"),
+  SIWS_URI: z.url().default("http://localhost:5173"),
+  JWT_SECRET: z
+    .string()
+    .min(32)
+    .default("development-only-secret-change-before-deploy"),
+  JWT_ISSUER: z.string().min(1).default("shared-deposit-api"),
+  JWT_AUDIENCE: z.string().min(1).default("shared-deposit"),
+  ACCESS_TOKEN_TTL_SECONDS: z.coerce
+    .number()
+    .int()
+    .min(60)
+    .max(3600)
+    .default(900),
+  REFRESH_TOKEN_TTL_SECONDS: z.coerce
+    .number()
+    .int()
+    .min(3600)
+    .default(2_592_000),
+  CHALLENGE_TTL_SECONDS: z.coerce
+    .number()
+    .int()
+    .min(30)
+    .max(900)
+    .default(300),
+  KEEPER_ALLOWLIST: walletAllowlist,
+  EVIDENCE_BUCKET: z.string().min(1).default("evidence"),
+});
+
+export type AppConfig = z.infer<typeof configSchema>;
+
+export function loadConfig(
+  environment: NodeJS.ProcessEnv = process.env,
+): AppConfig {
+  const config = configSchema.parse(environment);
+  if (
+    config.NODE_ENV === "production" &&
+    config.JWT_SECRET === "development-only-secret-change-before-deploy"
+  ) {
+    throw new Error("JWT_SECRET must be set in production.");
+  }
+  return config;
+}

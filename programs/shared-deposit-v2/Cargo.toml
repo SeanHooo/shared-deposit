@@ -1,0 +1,22 @@
+[package]
+name = "shared-deposit-v2"
+version = "0.2.0"
+description = "Shared Deposit release-candidate deposit passport"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib", "lib"]
+name = "shared_deposit_v2"
+
+[features]
+no-entrypoint = []
+no-idl = []
+no-log-ix-name = []
+idl-build = ["anchor-lang/idl-build", "anchor-spl/idl-build"]
+cpi = ["no-entrypoint"]
+init-if-needed = ["anchor-lang/init-if-needed"]
+default = ["init-if-needed"]
+
+[dependencies]
+anchor-lang = "0.31.1"
+anchor-spl = "0.31.1"

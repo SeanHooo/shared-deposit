@@ -1417,6 +1417,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "shared-deposit-v2"
+version = "0.2.0"
+dependencies = [
+ "anchor-lang",
+ "anchor-spl",
+]
+
+[[package]]
 name = "shlex"
 version = "2.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"

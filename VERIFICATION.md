@@ -143,3 +143,39 @@ persistent keeper, backend, mainnet mode, automated deduction or dispute system.
 The `deliver-acceptance-criteria` and `deliver-edge-cases` skills supplied the
 acceptance and recovery structure in `tests/`; `solana-dev` guided program
 constraints, generated clients, simulation, signing and Surfpool validation.
+
+## v2 release-candidate verification, 2026-10-30
+
+This section records the current v2 workspace. It is separate from the legacy v1
+devnet evidence above and does not claim that v2 is deployed or production-ready.
+
+| Gate | Result |
+| --- | --- |
+| Anchor build | `bash scripts/build.sh` passed with Anchor CLI 0.31.1, Solana CLI 2.3.0, and SBF platform-tools v1.57 |
+| Committed IDL | `programs/shared-deposit-v2/idl/shared_deposit_v2.json`, 55,314 bytes |
+| IDL SHA-256 | `c94c03a2589bbc32c3319e5e1c60d7a040376d9f9dabd623353c21ade9ca0dfe` |
+| Program artifact | `programs/shared-deposit-v2/artifacts/shared_deposit_v2.so`, 501,504 bytes |
+| Program SHA-256 | `afce4f16eefd40e8225422c1e8a8a34b83af132ac689667f4e4c2cace06f17ac` |
+| Generated-client drift | `bash scripts/check-generated-v2.sh` passed; the Codama output exactly matches the committed IDL |
+| Web tests | 41 passed across 7 files |
+| Web production build | `npm run build` passed; Vite emitted a 392.32 kB JavaScript bundle |
+| Surfpool v2 suite | 6 passed; the suite deploys the committed SBF artifact |
+| API typecheck and tests | TypeScript passed; 15 tests passed across 4 files |
+| Rust workspace tests | 6 passed: 1 v1 and 5 v2 |
+| Whitespace check | `git diff --check` passed |
+
+The build prints Anchor/Rust `unexpected_cfgs` warnings from dependency and macro
+expansion, plus an Anchor `AccountInfo::realloc` deprecation warning. These are
+recorded as warnings because the pinned build succeeds; they are not audit
+clearance.
+
+The historical v1 program artifact remains pinned to the deployed devnet digest
+`4acb20377c71624e2985c81a36bb099a643f938ca0808fccbd9b9bfc05c39841`.
+`scripts/build.sh` rebuilds v1 and refreshes the v1 IDL in `target/`, but it no
+longer overwrites that committed legacy artifact.
+
+Still unverified or unimplemented: v2 devnet deployment, Android MWA signing on a
+real device, iOS read-only pairing, persistent Postgres/Supabase state and private
+evidence storage, production indexing and keeper operation, the v2 React UI,
+Flutter, third-party audit and fuzzing, store-release engineering, the closed
+pilot, and any mainnet activity.

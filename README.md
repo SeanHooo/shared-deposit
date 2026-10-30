@@ -17,6 +17,12 @@ reusable at the next merchant — no re-depositing, no refund wait.
 | **Network** | Solana devnet |
 | **License** | MIT |
 
+> The hosted demo below exercises the original v1 program. A separate v2
+> release-candidate track now includes a new Anchor program, committed IDL,
+> shared Codama client, Surfpool coverage, and a Fastify API baseline. It is
+> not deployed and the React UI still targets v1. See
+> [IMPLEMENTATION-STATUS.md](IMPLEMENTATION-STATUS.md) for the exact boundary.
+
 ## The problem
 
 A traveller renting from four vendors in one day pays four deposits. Each one is a
@@ -238,11 +244,11 @@ bash scripts/build.sh
 Never commit wallet keypairs, seed phrases, or devnet secrets. The compiled program itself
 **is** committed, deliberately:
 `programs/shared-deposit/artifacts/shared_deposit.so` is byte for byte the
-program deployed on devnet (`sha256 4acb2037…9841`), and `scripts/build.sh` overwrites it so
-a rebuild keeps the tests and the deployment on the same bytes. `target/` is generated and
-gitignored, so without this copy the suite could not run for anyone who cloned the
-repository without a Solana toolchain. The program is public on devnet anyway — it is the
-thing under test, not a secret.
+program deployed on devnet (`sha256 4acb2037…9841`). `scripts/build.sh` rebuilds it into
+`target/` but leaves the historical committed v1 artifact untouched; it refreshes only the
+v2 release-candidate artifact and IDL. `target/` is generated and gitignored, so the
+committed v1 copy lets the existing suite run without a Solana toolchain. The program is
+public on devnet anyway — it is the thing under test, not a secret.
 
 The build script explicitly uses SBF platform-tools v1.57 (Rust/Cargo 1.95).
 The Solana CLI's default v1.48 tools cannot parse the current dependencies'
@@ -327,6 +333,9 @@ two test mints, and real connected browser wallets are required to finish it.
 ## Documents
 
 - [PITCH.md](PITCH.md) — problem, model, market, roadmap
+- [PILOT-PLAN.md](PILOT-PLAN.md) — post-MVP operating plan and pilot checklist
+- [IMPLEMENTATION-STATUS.md](IMPLEMENTATION-STATUS.md) — implemented v2 scope and remaining release work
+- [server/README.md](server/README.md) — API baseline, local run, and current limits
 - [VERIFICATION.md](VERIFICATION.md) — what is verified, with evidence
 - [DEPLOYMENT.md](DEPLOYMENT.md) — devnet deployment details
 - [RUNBOOK-DEPLOY.md](RUNBOOK-DEPLOY.md) — step-by-step deploy and initialize runbook

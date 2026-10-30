@@ -8,6 +8,7 @@
     "build": "tsc -b && vite build",
     "preview": "vite preview",
     "generate": "node scripts/generate-client.mjs",
+    "generate:v2": "node scripts/generate-client-v2.mjs",
     "test": "vitest run tests/*.test.ts",
     "test:e2e": "NODE_OPTIONS='--import tsx' playwright test",
     "demo": "NODE_OPTIONS='--import tsx' playwright test --config playwright.demo.config.ts",
