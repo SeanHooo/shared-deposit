@@ -198,8 +198,50 @@ The historical v1 program artifact remains pinned to the deployed devnet digest
 `scripts/build.sh` rebuilds v1 and refreshes the v1 IDL in `target/`, but it no
 longer overwrites that committed legacy artifact.
 
-Still unverified or unimplemented: v2 devnet deployment, Android MWA signing on a
-real device, iOS read-only pairing, persistent Postgres/Supabase state and private
-evidence storage, production indexing and keeper operation, the v2 React UI,
-Flutter, third-party audit and fuzzing, store-release engineering, the closed
-pilot, and any mainnet activity.
+Still unverified or unimplemented: Android MWA signing on a real device, iOS
+read-only pairing, persistent Postgres/Supabase state and private evidence
+storage, production indexing and keeper operation, the v2 React UI, Flutter,
+third-party audit and fuzzing, store-release engineering, the closed pilot, and
+any mainnet activity.
+
+### v2 devnet deployment, 2026-11-02
+
+The release-candidate program is deployed to Solana devnet. This section records
+the final deployment only; it does not claim that initialization or any deposit
+flow has run on v2.
+
+| Check | Result |
+| --- | --- |
+| Cluster | Solana devnet, genesis `EtWTRABZaYq6iMfeYKouRu166VU2xqa1wcaWoxPkrZBG` |
+| Program | `5rnNqVQG4zy4JUYHWxCEaYsbBEpNu8fHLn9p2MsdrVfx` |
+| Program owner | `BPFLoaderUpgradeab1e11111111111111111111111` |
+| Executable | yes |
+| ProgramData | `CiCGcKQuP4dnacBAww36r4fAD14NWNSF31fvbqXBxTxB` |
+| Upgrade authority | `CMNgjVqaaopNCZTsKBzD2zVxxQHMrFejNiaQW9iVXrxF` |
+| Deploy payer | `CMNgjVqaaopNCZTsKBzD2zVxxQHMrFejNiaQW9iVXrxF` |
+| Deploy buffer | `5BGPTRyHV5ZnwnJsFLot5yQ5fhL1JjmtkzVyfJvefieh`, closed after deployment |
+| Final deploy signature | `TVB7Tn977A9wCqrBcgwNqb1ih934u796iovW5TugYuUsSnqVLXbGdjrwyYwMy8tFnoHXtqAp2jG9hCPGHHcohGc` |
+| Final deploy slot | `517789956` |
+| Transaction result | `finalized`, `err: null` |
+| ProgramData account bytes | `501,549` |
+| ELF bytes after 45-byte loader header | `501,504` |
+| On-chain ELF SHA-256 | `902a31e8defab69f8fa404837149eb682b7fedbd509ed69f1952d61e58e2133e` |
+| Release artifact SHA-256 | `902a31e8defab69f8fa404837149eb682b7fedbd509ed69f1952d61e58e2133e` |
+| Byte-for-byte hash match | yes |
+| ProgramData rent | `2.548519160 SOL` |
+| Payer balance after deployment | `0.671059622 SOL` |
+
+Read-only reproduction of the program metadata:
+
+```bash
+solana program show 5rnNqVQG4zy4JUYHWxCEaYsbBEpNu8fHLn9p2MsdrVfx \
+  --url https://api.devnet.solana.com
+```
+
+The program account itself is a loader header and contains no ELF bytes. The
+hash above was computed by reading ProgramData and skipping its 45-byte
+upgradeable-loader header, then comparing the remaining bytes with
+`programs/shared-deposit-v2/artifacts/shared_deposit_v2.so`.
+
+No platform initialization, merchant registration, deposit, USDC transfer, or
+other user transaction was executed as part of this deployment.
