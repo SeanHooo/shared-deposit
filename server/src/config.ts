@@ -21,6 +21,14 @@ const rpcUrls = z
   )
   .pipe(z.array(z.url()).min(1));
 
+const databaseUrl = z.url().refine(
+  (value) => {
+    const protocol = new URL(value).protocol;
+    return protocol === "postgres:" || protocol === "postgresql:";
+  },
+  "DATABASE_URL must use postgres:// or postgresql://.",
+);
+
 const configSchema = z.object({
   NODE_ENV: z
     .enum(["development", "test", "production"])
@@ -59,6 +67,13 @@ const configSchema = z.object({
     .default(300),
   KEEPER_ALLOWLIST: walletAllowlist,
   EVIDENCE_BUCKET: z.string().min(1).default("evidence"),
+  DATABASE_URL: databaseUrl.optional(),
+  DATABASE_POOL_SIZE: z.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(50)
+    .default(10),
 });
 
 export type AppConfig = z.infer<typeof configSchema>;
@@ -72,6 +87,9 @@ export function loadConfig(
     config.JWT_SECRET === "development-only-secret-change-before-deploy"
   ) {
     throw new Error("JWT_SECRET must be set in production.");
+  }
+  if (config.NODE_ENV === "production" && !config.DATABASE_URL) {
+    throw new Error("DATABASE_URL must be set in production.");
   }
   return config;
 }

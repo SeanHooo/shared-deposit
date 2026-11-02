@@ -161,6 +161,7 @@ export function testConfig(overrides: Partial<AppConfig> = {}): AppConfig {
     CHALLENGE_TTL_SECONDS: 300,
     KEEPER_ALLOWLIST: [],
     EVIDENCE_BUCKET: "evidence",
+    DATABASE_POOL_SIZE: 10,
     ...overrides,
   };
 }

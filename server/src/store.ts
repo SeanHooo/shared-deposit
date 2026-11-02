@@ -31,6 +31,32 @@ export type AuditRecord = {
   createdAt: string;
 };
 
+export type AuthChallenge = {
+  id: string;
+  wallet: string;
+  nonce: string;
+  message: string;
+  expiresAt: number;
+};
+
+export type RefreshTokenRecord = {
+  tokenHash: string;
+  wallet: string;
+  familyId: string;
+  expiresAt: number;
+  usedAt: number | null;
+};
+
+export type RefreshRotationResult =
+  | {
+      status: "ok";
+      wallet: string;
+      familyId: string;
+    }
+  | {
+      status: "expired" | "reused" | "unknown";
+    };
+
 export interface MetadataStore {
   addEvidence(
     evidence: Omit<EvidenceRecord, "id" | "createdAt">,
@@ -46,6 +72,19 @@ export interface MetadataStore {
     id: string,
   ): Promise<NotificationRecord | null>;
   audit(record: Omit<AuditRecord, "id" | "createdAt">): Promise<void>;
+}
+
+export interface AuthStore {
+  saveChallenge(challenge: AuthChallenge): Promise<void>;
+  takeChallenge(id: string): Promise<AuthChallenge | null>;
+  addRefreshToken(record: RefreshTokenRecord): Promise<void>;
+  rotateRefresh(input: {
+    currentTokenHash: string;
+    nextTokenHash: string;
+    nextExpiresAt: number;
+    now: number;
+  }): Promise<RefreshRotationResult>;
+  revokeRefreshToken(tokenHash: string): Promise<void>;
 }
 
 export class InMemoryMetadataStore implements MetadataStore {
@@ -123,5 +162,72 @@ export class InMemoryMetadataStore implements MetadataStore {
 
   auditRecords(): readonly AuditRecord[] {
     return this.audits;
+  }
+}
+
+export class InMemoryAuthStore implements AuthStore {
+  private readonly challenges = new Map<string, AuthChallenge>();
+  private readonly refreshTokens = new Map<string, RefreshTokenRecord>();
+
+  async saveChallenge(challenge: AuthChallenge): Promise<void> {
+    this.challenges.set(challenge.id, challenge);
+  }
+
+  async takeChallenge(id: string): Promise<AuthChallenge | null> {
+    const challenge = this.challenges.get(id) ?? null;
+    this.challenges.delete(id);
+    return challenge;
+  }
+
+  async addRefreshToken(record: RefreshTokenRecord): Promise<void> {
+    this.refreshTokens.set(record.tokenHash, record);
+  }
+
+  async rotateRefresh(input: {
+    currentTokenHash: string;
+    nextTokenHash: string;
+    nextExpiresAt: number;
+    now: number;
+  }): Promise<RefreshRotationResult> {
+    const current = this.refreshTokens.get(input.currentTokenHash);
+    if (!current) return { status: "unknown" };
+    if (current.usedAt !== null) {
+      this.revokeFamily(current.familyId);
+      return { status: "reused" };
+    }
+    if (current.expiresAt <= input.now) {
+      this.revokeFamily(current.familyId);
+      return { status: "expired" };
+    }
+
+    this.refreshTokens.set(current.tokenHash, {
+      ...current,
+      usedAt: input.now,
+    });
+    this.refreshTokens.set(input.nextTokenHash, {
+      tokenHash: input.nextTokenHash,
+      wallet: current.wallet,
+      familyId: current.familyId,
+      expiresAt: input.nextExpiresAt,
+      usedAt: null,
+    });
+    return {
+      status: "ok",
+      wallet: current.wallet,
+      familyId: current.familyId,
+    };
+  }
+
+  async revokeRefreshToken(tokenHash: string): Promise<void> {
+    const record = this.refreshTokens.get(tokenHash);
+    if (record) this.revokeFamily(record.familyId);
+  }
+
+  private revokeFamily(familyId: string): void {
+    for (const [tokenHash, record] of this.refreshTokens) {
+      if (record.familyId === familyId) {
+        this.refreshTokens.delete(tokenHash);
+      }
+    }
   }
 }

@@ -311,3 +311,36 @@ curl -sS https://api.devnet.solana.com \
 This verifies initialization and the first USDC deposit only. It does not
 represent a completed rental, return, dispute, backend, mobile app, audit, or
 mainnet release.
+
+### PostgreSQL runtime persistence, 2026-11-02
+
+The API can now use PostgreSQL for the mutable state that must survive a
+process restart. Without `DATABASE_URL`, development and tests retain the
+in-memory fallback. Production configuration refuses to start without a
+PostgreSQL URL, and startup also checks that the runtime migration is recorded
+in `schema_migrations`.
+
+The versioned schema is
+`server/migrations/001_runtime_persistence.sql`. It stores one-time SIWS
+challenges, SHA-256 refresh-token hashes and token families, evidence metadata,
+notifications and read state, and audit records.
+
+| Check | Result |
+| --- | --- |
+| API typecheck | `npm run build` passed |
+| API tests | 22 passed across 6 files |
+| Web tests | 41 passed across 7 files |
+| Web production build | `npm run build` passed |
+| Production configuration | Missing database, default JWT secret, and non-PostgreSQL database URLs are rejected |
+| Restart simulation | A challenge and token issued by one `AuthService` instance were consumed and verified by a new instance sharing the same store |
+| One-time challenge | Reusing the consumed challenge returned `401` behavior |
+| Refresh rotation | Old, replacement, and descendant behavior remained covered |
+| Token-family reuse | Reusing a consumed refresh token revoked the rotated descendant |
+| Metadata persistence | Evidence, notification read state, and audit rows were written and read through PostgreSQL queries |
+| Database engine used in CI test | `pg-mem` 3.0.14 PostgreSQL-compatible engine |
+| Live Supabase/PostgreSQL connection | not yet verified |
+
+The test also exercises the committed migration SQL. It does not prove
+connection-pool behavior against a hosted Supabase project, database failover,
+backup restoration, row-level operational access policy, or retention jobs.
+Those remain deployment and operational release gates.

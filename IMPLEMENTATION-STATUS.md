@@ -1,6 +1,6 @@
 # Shared Deposit Implementation Status
 
-Updated 2026-10-30. This file separates working code from the broader release
+Updated 2026-11-02. This file separates working code from the broader release
 roadmap so tests and demos are not mistaken for a mainnet launch.
 
 ## Implemented and locally verified
@@ -16,6 +16,12 @@ roadmap so tests and demos are not mistaken for a mainnet launch.
 - Fastify API baseline with one-time SIWS challenges, Ed25519 verification,
   rotating refresh tokens, chain-derived roles, RPC failover, evidence
   metadata authorization, notification isolation, OpenAPI, and health output.
+- PostgreSQL runtime adapter and versioned migration for SIWS challenges,
+  hashed rotating refresh-token families, evidence metadata, notifications,
+  and audit records. Production startup requires `DATABASE_URL` and applied
+  migrations.
+- v2 is deployed to devnet and one approved smoke transaction initialized the
+  platform, passport, deposit, and vault with exactly 1 official devnet USDC.
 - CI definitions for Web, API, Rust, pinned Anchor build, IDL/client drift,
   and the Surfpool v2 suite.
 
@@ -25,12 +31,13 @@ roadmap so tests and demos are not mistaken for a mainnet launch.
   MWA transaction proof, iOS read-only pairing proof, and real-device
   pre-production rental are still required.
 - Phase 2: the v2 contract and focused integration tests exist. It is not
-  deployed to devnet. Property/fuzz coverage, a third-party audit, and the
-  full malicious-input matrix remain open.
+  past devnet initialization. Property/fuzz coverage, a third-party audit,
+  and the full malicious-input matrix remain open.
 - Phase 3: the API baseline exists, but production Postgres/Supabase
-  persistence, private object storage, indexing, reconciliation, persistent
+  connectivity, private object storage, indexing, reconciliation, persistent
   keeper, push notifications, Sentry, and operational audit retention are not
-  connected.
+  connected. The PostgreSQL adapter is verified with `pg-mem`, not a live
+  Supabase project.
 - Web: the v2 Kit client loader is integrated into tests and API modules. The
   existing React UI still targets the v1 demo contract; the v2 route-based UI,
   SIWS session integration, and persistent write-ahead transaction log remain
@@ -42,8 +49,8 @@ roadmap so tests and demos are not mistaken for a mainnet launch.
 - Squads 2-of-3 mainnet authority and KMS-backed keeper.
 - Store assets, legal review, privacy policy, support/dispute SLA, TestFlight,
   Play internal testing, hosted staging, and release rollback drills.
-- Devnet v2 deployment, closed Singapore pilot, audit closure, invitation
-  system, and mainnet release.
+- Closed Singapore pilot, audit closure, invitation system, and mainnet
+  release.
 
 The 28-32 week launch plan is therefore not complete. The repository currently
 contains a tested v2 contract and backend baseline, not a production service.

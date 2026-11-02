@@ -42,6 +42,7 @@ export type AppDependencies = {
   auth: AuthService;
   store: MetadataStore;
   now?: () => number;
+  onClose?: () => Promise<void>;
 };
 
 const ErrorSchema = z.object({
@@ -210,13 +211,14 @@ function requireAnyRole(roles: Roles): void {
 export async function buildApp(
   dependencies: AppDependencies,
 ): Promise<FastifyInstance> {
-  const { config, chain, auth, store } = dependencies;
+  const { config, chain, auth, store, onClose } = dependencies;
   const now = dependencies.now ?? Date.now;
   const app = Fastify({
     logger: config.NODE_ENV !== "test",
     trustProxy: true,
     bodyLimit: 1_048_576,
   });
+  if (onClose) app.addHook("onClose", onClose);
   app.setValidatorCompiler(validatorCompiler);
   app.setSerializerCompiler(serializerCompiler);
 

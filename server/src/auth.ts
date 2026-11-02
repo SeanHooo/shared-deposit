@@ -9,9 +9,12 @@ import {
 } from "@solana/kit";
 import { jwtVerify, SignJWT } from "jose";
 import {
-  ConflictError,
   UnauthorizedError,
 } from "./errors.js";
+import {
+  InMemoryAuthStore,
+  type AuthStore,
+} from "./store.js";
 
 export type AuthConfig = {
   domain: string;
@@ -22,20 +25,6 @@ export type AuthConfig = {
   accessTokenTtlSeconds: number;
   refreshTokenTtlSeconds: number;
   challengeTtlSeconds: number;
-};
-
-type Challenge = {
-  id: string;
-  wallet: string;
-  nonce: string;
-  message: string;
-  expiresAt: number;
-};
-
-type RefreshRecord = {
-  wallet: string;
-  familyId: string;
-  expiresAt: number;
 };
 
 export type TokenPair = {
@@ -123,14 +112,12 @@ function buildChallengeMessage(input: {
 }
 
 export class AuthService {
-  private readonly challenges = new Map<string, Challenge>();
-  private readonly refreshTokens = new Map<string, RefreshRecord>();
-  private readonly usedRefreshTokens = new Map<string, string>();
   private readonly secret: Uint8Array;
 
   constructor(
     private readonly config: AuthConfig,
     private readonly now: () => number = Date.now,
+    private readonly store: AuthStore = new InMemoryAuthStore(),
   ) {
     this.secret = encoder.encode(config.jwtSecret);
   }
@@ -151,7 +138,7 @@ export class AuthService {
       expiresAt: new Date(expiresAtMs).toISOString(),
       uri: this.config.uri,
     });
-    this.challenges.set(id, {
+    await this.store.saveChallenge({
       id,
       wallet,
       nonce,
@@ -172,8 +159,7 @@ export class AuthService {
     wallet: string;
     signature: string;
   }): Promise<void> {
-    const challenge = this.challenges.get(input.challengeId);
-    this.challenges.delete(input.challengeId);
+    const challenge = await this.store.takeChallenge(input.challengeId);
     if (!challenge) {
       throw new UnauthorizedError("The sign-in challenge is unknown or used.");
     }
@@ -199,32 +185,28 @@ export class AuthService {
   }
 
   async rotateRefresh(refreshToken: string): Promise<TokenPair> {
-    const tokenHash = sha256(refreshToken);
-    const current = this.refreshTokens.get(tokenHash);
-    if (!current) {
-      const compromisedFamily = this.usedRefreshTokens.get(tokenHash);
-      if (compromisedFamily) {
-        this.revokeFamily(compromisedFamily);
-      }
-      throw new UnauthorizedError("The refresh token is invalid or already used.");
+    const now = this.now();
+    const nextRefreshToken = randomBytes(48).toString("base64url");
+    const rotation = await this.store.rotateRefresh({
+      currentTokenHash: sha256(refreshToken),
+      nextTokenHash: sha256(nextRefreshToken),
+      nextExpiresAt: now + this.config.refreshTokenTtlSeconds * 1000,
+      now,
+    });
+    if (rotation.status !== "ok") {
+      throw new UnauthorizedError(
+        "The refresh token is invalid, expired, or already used.",
+      );
     }
-    this.refreshTokens.delete(tokenHash);
-    this.usedRefreshTokens.set(tokenHash, current.familyId);
-    if (current.expiresAt <= this.now()) {
-      throw new UnauthorizedError("The refresh token has expired.");
-    }
-    return this.createRefreshFamily(current.wallet, current.familyId);
+    return {
+      accessToken: await this.createAccessToken(rotation.wallet),
+      refreshToken: nextRefreshToken,
+      expiresIn: this.config.accessTokenTtlSeconds,
+    };
   }
 
   async logout(refreshToken: string): Promise<void> {
-    const tokenHash = sha256(refreshToken);
-    const current = this.refreshTokens.get(tokenHash);
-    if (current) {
-      this.revokeFamily(current.familyId);
-      return;
-    }
-    const usedFamily = this.usedRefreshTokens.get(tokenHash);
-    if (usedFamily) this.revokeFamily(usedFamily);
+    await this.store.revokeRefreshToken(sha256(refreshToken));
   }
 
   async verifyAccessToken(token: string): Promise<string> {
@@ -251,18 +233,29 @@ export class AuthService {
     wallet: string,
     familyId: string,
   ): Promise<TokenPair> {
-    const issuedAt = Math.floor(this.now() / 1000);
-    const accessExpiresAt =
-      issuedAt + this.config.accessTokenTtlSeconds;
     const refreshToken = randomBytes(48).toString("base64url");
     const refreshExpiresAt =
       this.now() + this.config.refreshTokenTtlSeconds * 1000;
-    this.refreshTokens.set(sha256(refreshToken), {
+    const accessToken = await this.createAccessToken(wallet);
+    await this.store.addRefreshToken({
+      tokenHash: sha256(refreshToken),
       wallet,
       familyId,
       expiresAt: refreshExpiresAt,
+      usedAt: null,
     });
-    const accessToken = await new SignJWT({
+    return {
+      accessToken,
+      refreshToken,
+      expiresIn: this.config.accessTokenTtlSeconds,
+    };
+  }
+
+  private async createAccessToken(wallet: string): Promise<string> {
+    const issuedAt = Math.floor(this.now() / 1000);
+    const accessExpiresAt =
+      issuedAt + this.config.accessTokenTtlSeconds;
+    return new SignJWT({
       token_use: "access",
       wallet,
     })
@@ -274,20 +267,6 @@ export class AuthService {
       .setExpirationTime(accessExpiresAt)
       .setJti(randomUUID())
       .sign(this.secret);
-    return {
-      accessToken,
-      refreshToken,
-      expiresIn: this.config.accessTokenTtlSeconds,
-    };
-  }
-
-  private revokeFamily(familyId: string): void {
-    for (const [hash, record] of this.refreshTokens) {
-      if (record.familyId === familyId) this.refreshTokens.delete(hash);
-    }
-    for (const [hash, recordedFamily] of this.usedRefreshTokens) {
-      if (recordedFamily === familyId) this.usedRefreshTokens.delete(hash);
-    }
   }
 }
 

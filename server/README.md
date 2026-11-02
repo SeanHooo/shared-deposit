@@ -25,11 +25,38 @@ Defaults:
 - OpenAPI JSON: `http://127.0.0.1:8787/documentation/json`
 - Swagger UI: `http://127.0.0.1:8787/docs`
 - Cluster: `devnet`
+- Storage: in-memory when `DATABASE_URL` is unset; PostgreSQL otherwise
 
 Configure runtime values with environment variables such as
 `SOLANA_RPC_URLS`, `SOLANA_CLUSTER`, `USDC_MINT`, `SIWS_DOMAIN`, `SIWS_URI`,
-`JWT_SECRET`, and `KEEPER_ALLOWLIST`. Never put a wallet secret key or seed
-phrase in this package.
+`JWT_SECRET`, `KEEPER_ALLOWLIST`, and `DATABASE_URL`. Never put a wallet secret
+key or seed phrase in this package.
+
+## PostgreSQL
+
+Production requires `DATABASE_URL`. Apply the versioned schema before starting
+the API:
+
+```bash
+DATABASE_URL='postgresql://user:password@host:5432/shared_deposit' npm run db:migrate
+DATABASE_URL='postgresql://user:password@host:5432/shared_deposit' npm run dev
+```
+
+The API checks `schema_migrations` at startup and refuses to run against a
+database where the runtime migrations have not been applied. The connection
+pool is closed when Fastify shuts down. Do not log the connection string.
+
+The schema persists:
+
+- one-time SIWS challenges;
+- hashed, rotating refresh tokens and their token families;
+- evidence metadata and digests;
+- notifications and read state;
+- authentication and evidence audit records.
+
+The opaque refresh token is returned to the client but only its SHA-256 hash is
+stored. Refresh rotation and reuse revocation happen in one database
+transaction.
 
 ## Safety behavior
 
@@ -37,6 +64,8 @@ phrase in this package.
 - Wallet signatures are verified with Ed25519.
 - Access tokens last 15 minutes by default.
 - Refresh tokens are hashed, rotated, and revoke their family on reuse.
+- PostgreSQL persists challenges, refresh-token families, evidence metadata,
+  notifications, and audit records across API restarts.
 - Roles are recomputed from chain on every protected request.
 - RPC URLs are pinned by cluster genesis hash; localnet requires loopback.
 - Multiple RPC endpoints are tried in order without turning the API into a
@@ -54,11 +83,12 @@ npm test
 
 ## Current limits
 
-This is not a production deployment. Persistence is in memory and disappears
-when the process restarts. Supabase/Postgres adapters, an event indexer,
-reconciliation jobs, a persistent keeper, push delivery, private object
-upload, EXIF removal, malware scanning, 365-day retention automation,
-Sentry, and background audit-log storage are not implemented here.
+This is not a production deployment. The PostgreSQL adapter has been verified
+against an in-process PostgreSQL-compatible engine, not a live Supabase project.
+An event indexer, reconciliation jobs, a persistent keeper, push delivery,
+private object upload, EXIF removal, malware scanning, 365-day retention
+automation, Sentry, and operator tooling for audit-log access are not
+implemented here.
 
 The evidence endpoints store metadata and digests, not evidence bodies. Do not
 describe them as private object storage until the storage adapter and its
