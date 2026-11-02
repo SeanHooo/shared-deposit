@@ -245,3 +245,69 @@ upgradeable-loader header, then comparing the remaining bytes with
 
 No platform initialization, merchant registration, deposit, USDC transfer, or
 other user transaction was executed as part of this deployment.
+
+### v2 devnet platform initialization and deposit smoke test, 2026-11-02
+
+After the deployment was verified, one explicitly approved devnet transaction
+initialized the v2 platform and operator state, then transferred exactly 1
+official devnet USDC into the deposit vault. The transaction was simulated
+without error before signing, broadcast once, and confirmed without error. The
+resulting platform, passport, deposit, vault, SOL, and token balances were read
+back and checked against the expected state.
+
+| Check | Result |
+| --- | --- |
+| Cluster | Solana devnet, genesis `EtWTRABZaYq6iMfeYKouRu166VU2xqa1wcaWoxPkrZBG` |
+| Program | `5rnNqVQG4zy4JUYHWxCEaYsbBEpNu8fHLn9p2MsdrVfx` |
+| ProgramData | `CiCGcKQuP4dnacBAww36r4fAD14NWNSF31fvbqXBxTxB` |
+| Operator and fee payer | `CMNgjVqaaopNCZTsKBzD2zVxxQHMrFejNiaQW9iVXrxF` |
+| Official devnet USDC mint | `4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU`, SPL Token, six decimals |
+| Owner USDC associated token account | `6EQHQDNn7VRuW32jFdz4qGBZF7KzYyhRP79WrLcmL5k5` |
+| Platform PDA | `3Vr9PyqtNKrpM8L9F8MPwHMWLoijq6o47gV2zA28iWdN` |
+| Passport PDA | `2AFEktzF249Uar9gvzaQNTtF8suAY2ivQvs2p61S4WjV` |
+| Deposit PDA | `AQKs55y2e2dHYMchkZuFeNiw88ukkniCF3xPQc6dzY95` |
+| Vault associated token account | `9VFCFZTWZEzA79GAPjX1wVsDvnoSitnB2P8U3HiAhM17` |
+| Deposit amount | exactly `1,000,000` raw units, or `1 USDC` |
+| Transaction version | `0` |
+| Signature | `5RNavKpTQ8kTXh7ydmtRkrQHMMoA8mVCXYE8qgQD1wBvnWbtdMxK6FndhwNFiFwtnaCUCnfzhagkbvjCgxcrsFv7` |
+| Slot | `517796302` |
+| Transaction result | `Ok`, `err: null` |
+| Fee | `5,000` lamports |
+| Compute consumed | `75,052` CU |
+| New account rent | `4,836,160` lamports total |
+| Operator SOL before transaction | `671,059,622` lamports |
+| Operator SOL after transaction | `666,218,462` lamports, or `0.666218462 SOL` |
+| Owner USDC before transaction | `20 USDC` |
+| Owner USDC after transaction | `19 USDC` |
+| Vault USDC after transaction | `1 USDC` |
+
+The atomic transaction performed these actions:
+
+1. Initialized the v2 platform with the official devnet USDC mint.
+2. Initialized the operator's passport.
+3. Initialized the operator's USDC deposit account and deposit vault.
+4. Transferred exactly 1 USDC from the owner token account into the vault.
+
+Post-transaction account decoding confirmed that the platform operator is
+`CMNgjVqaaopNCZTsKBzD2zVxxQHMrFejNiaQW9iVXrxF`, the platform mint is official
+devnet USDC, and the passport owner is the operator. The passport `nextNonce` is
+`0`; the deposit has `1,000,000` raw units available and `0` locked.
+
+The smoke script is
+`app/scripts/devnet-v2-smoke.ts`. Its default mode refuses non-devnet genesis
+hashes, checks the deployed program and upgrade authority, verifies the official
+USDC mint, and simulates the transaction without reading a keypair. Sending
+requires the explicit `--send` mode after human review.
+
+Read-only reproduction of the confirmed transaction:
+
+```bash
+curl -sS https://api.devnet.solana.com \
+  -X POST \
+  -H 'Content-Type: application/json' \
+  -d '{"jsonrpc":"2.0","id":"tx","method":"getTransaction","params":["5RNavKpTQ8kTXh7ydmtRkrQHMMoA8mVCXYE8qgQD1wBvnWbtdMxK6FndhwNFiFwtnaCUCnfzhagkbvjCgxcrsFv7",{"encoding":"jsonParsed","commitment":"confirmed","maxSupportedTransactionVersion":1}]}'
+```
+
+This verifies initialization and the first USDC deposit only. It does not
+represent a completed rental, return, dispute, backend, mobile app, audit, or
+mainnet release.
