@@ -74,6 +74,36 @@ const configSchema = z.object({
     .min(1)
     .max(50)
     .default(10),
+  INDEXER_POLL_INTERVAL_MS: z.coerce
+    .number()
+    .int()
+    .min(500)
+    .max(300_000)
+    .default(5_000),
+  INDEXER_STALE_AFTER_SECONDS: z.coerce
+    .number()
+    .int()
+    .min(10)
+    .max(86_400)
+    .default(60),
+  INDEXER_MAX_LAG_SLOTS: z.coerce
+    .number()
+    .int()
+    .min(0)
+    .max(Number.MAX_SAFE_INTEGER)
+    .default(100),
+  INDEXER_PAGE_SIZE: z.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(1_000)
+    .default(100),
+  INDEXER_MAX_TRANSACTIONS_PER_CYCLE: z.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(10_000)
+    .default(500),
 });
 
 export type AppConfig = z.infer<typeof configSchema>;

@@ -1,10 +1,14 @@
 import { readFile } from "node:fs/promises";
 import { newDb } from "pg-mem";
 import type { Pool } from "pg";
+import { getBase58Decoder } from "@solana/kit";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { PROGRAM_ADDRESS_V2 } from "../../app/src/program-v2.js";
 import { AuthService } from "../src/auth.js";
+import { projectSnapshotAccounts } from "../src/indexer-types.js";
 import { PostgresStore } from "../src/postgres.js";
 import {
+  snapshotFor,
   syntheticWallet,
   testConfig,
   type SyntheticWallet,
@@ -20,11 +24,19 @@ describe("PostgreSQL runtime persistence", () => {
     const database = newDb();
     const adapter = database.adapters.createPg();
     pool = new adapter.Pool() as unknown as Pool;
-    const migration = await readFile(
+    const runtimeMigration = await readFile(
       new URL("../migrations/001_runtime_persistence.sql", import.meta.url),
       "utf8",
     );
-    await pool.query(migration);
+    const indexerMigration = await readFile(
+      new URL("../migrations/002_chain_indexer.sql", import.meta.url),
+      "utf8",
+    );
+    await pool.query(runtimeMigration);
+    // pg-mem does not implement PostgreSQL's POSIX regex operator.
+    await pool.query(
+      indexerMigration.replaceAll(" ~ '^[0-9a-f]{64}$'", " <> ''"),
+    );
     await pool.query(
       `CREATE TABLE schema_migrations (
          name TEXT PRIMARY KEY,
@@ -32,8 +44,8 @@ describe("PostgreSQL runtime persistence", () => {
        )`,
     );
     await pool.query(
-      "INSERT INTO schema_migrations (name) VALUES ($1)",
-      ["001_runtime_persistence.sql"],
+      "INSERT INTO schema_migrations (name) VALUES ($1), ($2)",
+      ["001_runtime_persistence.sql", "002_chain_indexer.sql"],
     );
     store = new PostgresStore(pool);
     wallet = await syntheticWallet();
@@ -130,6 +142,117 @@ describe("PostgreSQL runtime persistence", () => {
         subject: rental,
       },
     ]);
+  });
+
+  it("persists reconciliation runs and applies the complete chain snapshot", async () => {
+    const merchant = await syntheticWallet();
+    const operator = await syntheticWallet();
+    const snapshot = await snapshotFor(
+      wallet.wallet,
+      merchant.wallet,
+      operator.wallet,
+    );
+    const first = await store.reconcileSnapshot({
+      cluster: "localnet",
+      programId: PROGRAM_ADDRESS_V2,
+      snapshotSlot: snapshot.slot.toString(),
+      accounts: projectSnapshotAccounts(snapshot),
+    });
+    expect(first).toMatchObject({
+      inserted: 4,
+      updated: 0,
+      deleted: 0,
+      unchanged: 0,
+    });
+
+    const second = await store.reconcileSnapshot({
+      cluster: "localnet",
+      programId: PROGRAM_ADDRESS_V2,
+      snapshotSlot: (snapshot.slot + 1n).toString(),
+      accounts: projectSnapshotAccounts(snapshot),
+    });
+    expect(second).toMatchObject({
+      inserted: 0,
+      updated: 0,
+      deleted: 0,
+      unchanged: 4,
+    });
+
+    const projections = await pool.query(
+      `SELECT account_kind, observed_slot
+       FROM chain_account_projection
+       WHERE cluster = $1 AND program_id = $2
+       ORDER BY account_kind`,
+      ["localnet", PROGRAM_ADDRESS_V2],
+    );
+    expect(projections.rows).toHaveLength(4);
+    expect(
+      projections.rows.every(
+        (row) =>
+          String(row.observed_slot) === (snapshot.slot + 1n).toString(),
+      ),
+    ).toBe(true);
+
+    const runs = await pool.query(
+      `SELECT status, inserted_count, unchanged_count
+       FROM chain_reconciliation_runs
+       ORDER BY started_at`,
+    );
+    expect(runs.rows).toEqual([
+      { status: "completed", inserted_count: 4, unchanged_count: 0 },
+      { status: "completed", inserted_count: 0, unchanged_count: 4 },
+    ]);
+  });
+
+  it("makes event replay idempotent and persists the cursor transactionally", async () => {
+    const signature = getBase58Decoder().decode(new Uint8Array(64).fill(9));
+    const rental = "11111111111111111111111111111111";
+    const batch = {
+      cluster: "localnet",
+      programId: PROGRAM_ADDRESS_V2,
+      expectedPreviousSignature: null,
+      signature,
+      slot: "321",
+      blockTime: "1789000200",
+      events: [
+        {
+          cluster: "localnet",
+          programId: PROGRAM_ADDRESS_V2,
+          signature,
+          logIndex: 3,
+          action: 11,
+          actionName: "DisputeOpened",
+          subject: rental,
+          owner: wallet.wallet,
+          actor: wallet.wallet,
+          amount: "10000000",
+          digest: "ab".repeat(32),
+          timestamp: "1789000200",
+          slot: "321",
+          blockTime: "1789000200",
+        },
+      ],
+    };
+
+    await expect(store.applyEventBatch(batch)).resolves.toEqual({
+      inserted: 1,
+    });
+    await expect(store.applyEventBatch(batch)).resolves.toEqual({
+      inserted: 0,
+    });
+    const eventCount = await pool.query(
+      `SELECT COUNT(*)::INTEGER AS count
+       FROM chain_events
+       WHERE signature = $1`,
+      [signature],
+    );
+    expect(eventCount.rows[0].count).toBe(1);
+    await expect(
+      store.indexerState("localnet", PROGRAM_ADDRESS_V2),
+    ).resolves.toMatchObject({
+      lastEventSignature: signature,
+      lastEventSlot: "321",
+    });
   });
 });
 

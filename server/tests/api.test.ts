@@ -4,6 +4,7 @@ import { address } from "@solana/kit";
 import { buildApp } from "../src/app.js";
 import { AuthService } from "../src/auth.js";
 import { FixedChainGateway } from "../src/chain.js";
+import type { IndexerRuntimeState } from "../src/indexer-types.js";
 import { InMemoryMetadataStore } from "../src/store.js";
 import type { SyntheticWallet } from "./fixtures.js";
 import {
@@ -20,6 +21,7 @@ describe.sequential("Shared Deposit API", () => {
   let outsider: SyntheticWallet;
   let rental: string;
   let store: InMemoryMetadataStore;
+  let indexerState: IndexerRuntimeState;
   const guestNotification = "0e4ac83b-b35c-4fc4-8cf8-7a8e73208f2d";
   const merchantNotification = "d97cb9ca-f04b-42a2-a7c5-51340b832e56";
 
@@ -75,6 +77,19 @@ describe.sequential("Shared Deposit API", () => {
       challengeTtlSeconds: config.CHALLENGE_TTL_SECONDS,
     });
     store = new InMemoryMetadataStore();
+    indexerState = {
+      cluster: "localnet",
+      programId: "5rnNqVQG4zy4JUYHWxCEaYsbBEpNu8fHLn9p2MsdrVfx",
+      lastEventSignature: "fixture-signature",
+      lastEventSlot: "100",
+      lastEventScanSlot: "123",
+      lastObservedSlot: "123",
+      lastAttemptAt: "2026-09-21T14:13:20.000Z",
+      lastSuccessAt: "2026-09-21T14:13:20.000Z",
+      lastReconciliationAt: "2026-09-21T14:13:20.000Z",
+      lastError: null,
+      updatedAt: "2026-09-21T14:13:20.000Z",
+    };
     store.seedNotification({
       id: guestNotification,
       wallet: guest.wallet,
@@ -100,6 +115,7 @@ describe.sequential("Shared Deposit API", () => {
       chain: new FixedChainGateway(snapshot),
       auth,
       store,
+      indexerHealth: async () => indexerState,
       now: () => 1_790_000_000_000,
     });
     await app.ready();
@@ -116,6 +132,10 @@ describe.sequential("Shared Deposit API", () => {
       status: "ok",
       cluster: "localnet",
       evidenceStorage: "metadata-only",
+      indexer: {
+        status: "healthy",
+        eventLagSlots: "0",
+      },
     });
 
     const openapi = await app.inject({
@@ -131,6 +151,110 @@ describe.sequential("Shared Deposit API", () => {
     expect(paths).toHaveProperty("/v1/disputes");
     expect(paths).toHaveProperty("/v1/evidence");
     expect(paths).toHaveProperty("/v1/notifications");
+  });
+
+  it("marks stale or lagging indexers as degraded", async () => {
+    const originalState = { ...indexerState };
+    try {
+      indexerState.lastSuccessAt = "2026-09-21T14:10:00.000Z";
+      const stale = await app.inject({ method: "GET", url: "/v1/health" });
+      expect(stale.json()).toMatchObject({
+        status: "degraded",
+        indexer: { status: "degraded" },
+      });
+
+      indexerState.lastSuccessAt = "2026-09-21T14:13:20.000Z";
+      indexerState.lastEventScanSlot = "0";
+      indexerState.lastObservedSlot = "1000";
+      const lagging = await app.inject({ method: "GET", url: "/v1/health" });
+      expect(lagging.json()).toMatchObject({
+        status: "degraded",
+        indexer: {
+          status: "degraded",
+          eventLagSlots: "1000",
+        },
+      });
+
+      indexerState.lastObservedSlot = "0";
+      indexerState.lastEventScanSlot = null;
+      indexerState.lastSuccessAt = null;
+      indexerState.lastAttemptAt = "2026-09-21T14:13:20.000Z";
+      const starting = await app.inject({ method: "GET", url: "/v1/health" });
+      expect(starting.json()).toMatchObject({
+        status: "ok",
+        indexer: {
+          status: "starting",
+          eventLagSlots: null,
+        },
+      });
+    } finally {
+      Object.assign(indexerState, originalState);
+    }
+  });
+
+  it("omits indexer health when no indexer state source is configured", async () => {
+    const appWithoutIndexer = await buildApp({
+      config: testConfig(),
+      chain: new FixedChainGateway(
+        await snapshotFor(guest.wallet, merchant.wallet, operator.wallet),
+      ),
+      auth: new AuthService({
+        domain: testConfig().SIWS_DOMAIN,
+        uri: testConfig().SIWS_URI,
+        jwtSecret: testConfig().JWT_SECRET,
+        issuer: testConfig().JWT_ISSUER,
+        audience: testConfig().JWT_AUDIENCE,
+        accessTokenTtlSeconds: testConfig().ACCESS_TOKEN_TTL_SECONDS,
+        refreshTokenTtlSeconds: testConfig().REFRESH_TOKEN_TTL_SECONDS,
+        challengeTtlSeconds: testConfig().CHALLENGE_TTL_SECONDS,
+      }),
+      store,
+    });
+    try {
+      const health = await appWithoutIndexer.inject({
+        method: "GET",
+        url: "/v1/health",
+      });
+      expect(health.json()).toMatchObject({
+        status: "ok",
+        indexer: null,
+      });
+    } finally {
+      await appWithoutIndexer.close();
+    }
+  });
+
+  it("degrades when the indexer has never recorded an attempt", async () => {
+    const appWithoutState = await buildApp({
+      config: testConfig(),
+      chain: new FixedChainGateway(
+        await snapshotFor(guest.wallet, merchant.wallet, operator.wallet),
+      ),
+      auth: new AuthService({
+        domain: testConfig().SIWS_DOMAIN,
+        uri: testConfig().SIWS_URI,
+        jwtSecret: testConfig().JWT_SECRET,
+        issuer: testConfig().JWT_ISSUER,
+        audience: testConfig().JWT_AUDIENCE,
+        accessTokenTtlSeconds: testConfig().ACCESS_TOKEN_TTL_SECONDS,
+        refreshTokenTtlSeconds: testConfig().REFRESH_TOKEN_TTL_SECONDS,
+        challengeTtlSeconds: testConfig().CHALLENGE_TTL_SECONDS,
+      }),
+      store,
+      indexerHealth: async () => null,
+    });
+    try {
+      const health = await appWithoutState.inject({
+        method: "GET",
+        url: "/v1/health",
+      });
+      expect(health.json()).toMatchObject({
+        status: "degraded",
+        indexer: null,
+      });
+    } finally {
+      await appWithoutState.close();
+    }
   });
 
   it("accepts a real Ed25519 SIWS signature exactly once", async () => {

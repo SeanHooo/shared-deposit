@@ -299,6 +299,41 @@ hashes, checks the deployed program and upgrade authority, verifies the official
 USDC mint, and simulates the transaction without reading a keypair. Sending
 requires the explicit `--send` mode after human review.
 
+### v2 event indexer and chain reconciliation, 2026-11-03
+
+The API now includes a separately run chain indexer and full-snapshot account
+reconciliation layer. The Solana program remains authoritative; the indexer
+only stores query projections, event history, cursors, reconciliation findings,
+and health state.
+
+| Gate | Result |
+| --- | --- |
+| API TypeScript build | `npm run build` passed |
+| API tests | 36 passed across 7 files |
+| Web tests | 41 passed across 7 files |
+| Web production build | passed; Vite emitted a 392.32 kB JavaScript bundle |
+| Event replay | covered; duplicate application inserts zero rows |
+| Cursor safety | covered for failed transaction reads and malformed v2 events |
+| Reconciliation | covered for added, updated, removed, and unchanged accounts |
+| Persistence | covered with `pg-mem`, including transactional event cursor updates |
+| Health | covered for missing, starting, healthy, stale, lagging, no-event, and backlog states |
+| Transaction v1 reads | `getTransaction` uses `maxSupportedTransactionVersion: 1` and base64 encoding |
+| Whitespace check | `git diff --check` passed |
+
+The indexer pulls signatures newer than a persisted cursor, processes them from
+oldest to newest, and refuses to skip a cursor that has fallen outside the
+RPC's retained history. Failed Solana transactions advance the cursor without
+writing events. Event rows and cursor advancement commit in one PostgreSQL
+transaction, while reconciliation records each added, updated, and removed
+account in a separate audited run. Health uses an event-scan checkpoint rather
+than the last event transaction slot, and capped cycles retain a lagging
+checkpoint until their backlog is cleared.
+
+This is local verification, not operational proof. The indexer has not yet run
+continuously against a hosted PostgreSQL instance and production RPC endpoint.
+Indexed state is not yet used as the authority for `/v1/me`, `/v1/passports`,
+`/v1/rentals`, or role checks; those paths continue to read the chain.
+
 Read-only reproduction of the confirmed transaction:
 
 ```bash

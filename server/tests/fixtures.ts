@@ -162,6 +162,11 @@ export function testConfig(overrides: Partial<AppConfig> = {}): AppConfig {
     KEEPER_ALLOWLIST: [],
     EVIDENCE_BUCKET: "evidence",
     DATABASE_POOL_SIZE: 10,
+    INDEXER_POLL_INTERVAL_MS: 5_000,
+    INDEXER_STALE_AFTER_SECONDS: 60,
+    INDEXER_MAX_LAG_SLOTS: 100,
+    INDEXER_PAGE_SIZE: 100,
+    INDEXER_MAX_TRANSACTIONS_PER_CYCLE: 500,
     ...overrides,
   };
 }

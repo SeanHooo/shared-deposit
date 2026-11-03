@@ -29,6 +29,10 @@ import {
 } from "./chain.js";
 import type { AppConfig } from "./config.js";
 import {
+  deriveIndexerHealth,
+  type IndexerRuntimeState,
+} from "./indexer-types.js";
+import {
   ApiError,
   ForbiddenError,
   NotFoundError,
@@ -41,6 +45,7 @@ export type AppDependencies = {
   chain: ChainGateway;
   auth: AuthService;
   store: MetadataStore;
+  indexerHealth?: () => Promise<IndexerRuntimeState | null>;
   now?: () => number;
   onClose?: () => Promise<void>;
 };
@@ -211,7 +216,7 @@ function requireAnyRole(roles: Roles): void {
 export async function buildApp(
   dependencies: AppDependencies,
 ): Promise<FastifyInstance> {
-  const { config, chain, auth, store, onClose } = dependencies;
+  const { config, chain, auth, store, indexerHealth, onClose } = dependencies;
   const now = dependencies.now ?? Date.now;
   const app = Fastify({
     logger: config.NODE_ENV !== "test",
@@ -278,25 +283,55 @@ export async function buildApp(
       summary: "Liveness and runtime safety policy",
       response: {
         200: z.object({
-          status: z.literal("ok"),
+          status: z.enum(["ok", "degraded"]),
           service: z.literal("shared-deposit-api"),
           cluster: z.string(),
           program: z.string(),
           timestamp: z.string(),
           chainSource: z.string().nullable(),
           evidenceStorage: z.literal("metadata-only"),
+          indexer: z
+            .object({
+              status: z.enum(["starting", "healthy", "degraded"]),
+              lastEventSignature: z.string().nullable(),
+              lastEventSlot: z.string().nullable(),
+              lastEventScanSlot: z.string().nullable(),
+              lastObservedSlot: z.string().nullable(),
+              eventLagSlots: z.string().nullable(),
+              staleAfterSeconds: z.number().int(),
+              maxLagSlots: z.string(),
+              lastAttemptAt: z.string().nullable(),
+              lastSuccessAt: z.string().nullable(),
+              lastReconciliationAt: z.string().nullable(),
+              lastError: z.string().nullable(),
+              updatedAt: z.string().nullable(),
+            })
+            .nullable(),
         }),
       },
     },
-    handler: async () => ({
-      status: "ok" as const,
-      service: "shared-deposit-api" as const,
-      cluster: config.SOLANA_CLUSTER,
-      program: "5rnNqVQG4zy4JUYHWxCEaYsbBEpNu8fHLn9p2MsdrVfx",
-      timestamp: new Date(now()).toISOString(),
-      chainSource: chain.lastSource(),
-      evidenceStorage: "metadata-only" as const,
-    }),
+    handler: async () => {
+      const timestamp = new Date(now()).toISOString();
+      const indexerState = indexerHealth ? await indexerHealth() : null;
+      const indexer = deriveIndexerHealth(indexerState, now(), {
+        staleAfterSeconds: config.INDEXER_STALE_AFTER_SECONDS,
+        maxLagSlots: BigInt(config.INDEXER_MAX_LAG_SLOTS),
+      });
+      const indexerMissing = indexerHealth !== undefined && indexer === null;
+      return {
+        status:
+          indexerMissing || indexer?.status === "degraded"
+            ? ("degraded" as const)
+            : ("ok" as const),
+        service: "shared-deposit-api" as const,
+        cluster: config.SOLANA_CLUSTER,
+        program: "5rnNqVQG4zy4JUYHWxCEaYsbBEpNu8fHLn9p2MsdrVfx",
+        timestamp,
+        chainSource: chain.lastSource(),
+        evidenceStorage: "metadata-only" as const,
+        indexer,
+      };
+    },
   });
 
   routes.route({

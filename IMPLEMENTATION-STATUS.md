@@ -1,6 +1,6 @@
 # Shared Deposit Implementation Status
 
-Updated 2026-11-02. This file separates working code from the broader release
+Updated 2026-11-03. This file separates working code from the broader release
 roadmap so tests and demos are not mistaken for a mainnet launch.
 
 ## Implemented and locally verified
@@ -20,6 +20,11 @@ roadmap so tests and demos are not mistaken for a mainnet launch.
   hashed rotating refresh-token families, evidence metadata, notifications,
   and audit records. Production startup requires `DATABASE_URL` and applied
   migrations.
+- Chain event indexer and full-snapshot reconciliation with a transactional
+  event cursor, idempotent replay, complete v2 account projections, change
+  findings, transaction-v1 reads, RPC history-gap detection, and indexer health
+  in `/v1/health`. Indexed data is not used as the authority for protected API
+  state or role checks.
 - v2 is deployed to devnet and one approved smoke transaction initialized the
   platform, passport, deposit, and vault with exactly 1 official devnet USDC.
 - CI definitions for Web, API, Rust, pinned Anchor build, IDL/client drift,
@@ -33,10 +38,11 @@ roadmap so tests and demos are not mistaken for a mainnet launch.
 - Phase 2: the v2 contract and focused integration tests exist. It is not
   past devnet initialization. Property/fuzz coverage, a third-party audit,
   and the full malicious-input matrix remain open.
-- Phase 3: the API baseline exists, but production Postgres/Supabase
-  connectivity, private object storage, indexing, reconciliation, persistent
-  keeper, push notifications, Sentry, and operational audit retention are not
-  connected. The PostgreSQL adapter is verified with `pg-mem`, not a live
+- Phase 3: the API baseline and local event-indexer/reconciliation
+  implementation exist, but production Postgres/Supabase connectivity, private
+  object storage, continuous hosted indexer operation, persistent keeper, push
+  notifications, Sentry, and operational audit retention are not connected.
+  PostgreSQL and indexer persistence are verified with `pg-mem`, not a live
   Supabase project.
 - Web: the v2 Kit client loader is integrated into tests and API modules. The
   existing React UI still targets the v1 demo contract; the v2 route-based UI,

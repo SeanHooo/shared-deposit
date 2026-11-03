@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "tsx watch src/index.ts",
+    "indexer": "tsx src/indexer-cli.ts",
     "start": "tsx src/index.ts",
     "build": "tsc --noEmit",
     "db:migrate": "tsx src/migrate.ts",

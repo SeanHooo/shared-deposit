@@ -30,6 +30,29 @@ export interface ChainGateway {
   lastSource(): string | null;
 }
 
+export type IndexerSignatureEntry = {
+  signature: string;
+  slot: string;
+  blockTime: string | null;
+  failed: boolean;
+};
+
+export type IndexerTransaction = {
+  slot: string;
+  blockTime: string | null;
+  logs: readonly string[];
+  failed: boolean;
+};
+
+export interface IndexerChainGateway extends ChainGateway {
+  signaturesForAddress(input: {
+    address: string;
+    before: string | null;
+    limit: number;
+  }): Promise<IndexerSignatureEntry[]>;
+  transaction(signature: string): Promise<IndexerTransaction>;
+}
+
 function isLoopbackHost(hostname: string): boolean {
   const normalized = hostname.toLowerCase().replace(/^\[|\]$/g, "");
   return (
@@ -95,6 +118,7 @@ export async function assertExpectedCluster(
 
 export class MultiRpcChainGateway implements ChainGateway {
   private source: string | null = null;
+  private readonly verifiedEndpoints = new Set<string>();
 
   constructor(
     private readonly rpcUrls: string[],
@@ -111,19 +135,30 @@ export class MultiRpcChainGateway implements ChainGateway {
   }
 
   async load(): Promise<V2Snapshot> {
+    return this.withRpc((rpc) =>
+      loadV2Snapshot(
+        rpc,
+        this.expectedUsdcMint
+          ? address(this.expectedUsdcMint)
+          : undefined,
+      ),
+    );
+  }
+
+  protected async withRpc<T>(
+    operation: (rpc: V2Rpc) => Promise<T>,
+  ): Promise<T> {
     const failures: string[] = [];
     for (const rpcUrl of this.rpcUrls) {
       try {
         const rpc = makeV2Rpc(rpcUrl);
-        await assertExpectedCluster(rpc, rpcUrl, this.expectedCluster);
-        const snapshot = await loadV2Snapshot(
-          rpc,
-          this.expectedUsdcMint
-            ? address(this.expectedUsdcMint)
-            : undefined,
-        );
+        if (!this.verifiedEndpoints.has(rpcUrl)) {
+          await assertExpectedCluster(rpc, rpcUrl, this.expectedCluster);
+          this.verifiedEndpoints.add(rpcUrl);
+        }
+        const result = await operation(rpc);
         this.source = rpcUrl;
-        return snapshot;
+        return result;
       } catch (error) {
         failures.push(
           `${rpcHost(rpcUrl)}: ${
@@ -135,6 +170,71 @@ export class MultiRpcChainGateway implements ChainGateway {
     throw new ChainUnavailableError(
       `All configured Solana RPCs failed (${failures.join("; ")}).`,
     );
+  }
+}
+
+export class MultiRpcIndexerGateway
+  extends MultiRpcChainGateway
+  implements IndexerChainGateway
+{
+  async signaturesForAddress(input: {
+    address: string;
+    before: string | null;
+    limit: number;
+  }): Promise<IndexerSignatureEntry[]> {
+    return this.withRpc(async (rpc) => {
+      const config = {
+        limit: input.limit,
+        commitment: "confirmed" as const,
+        ...(input.before
+          ? {
+              before: input.before as NonNullable<
+                Parameters<V2Rpc["getSignaturesForAddress"]>[1]
+              >["before"],
+            }
+          : {}),
+      };
+      const entries = await rpc
+        .getSignaturesForAddress(address(input.address), config)
+        .send();
+      return entries.map((entry) => ({
+        signature: entry.signature,
+        slot: entry.slot.toString(),
+        blockTime: entry.blockTime?.toString() ?? null,
+        failed: entry.err !== null,
+      }));
+    });
+  }
+
+  async transaction(signature: string): Promise<IndexerTransaction> {
+    return this.withRpc(async (rpc) => {
+      const transaction = await rpc
+        .getTransaction(
+          signature as Parameters<V2Rpc["getTransaction"]>[0],
+          {
+            encoding: "base64",
+            maxSupportedTransactionVersion: 1,
+            commitment: "confirmed",
+          },
+        )
+        .send();
+      if (!transaction) {
+        throw new Error(
+          `Transaction ${signature} is not readable from this RPC.`,
+        );
+      }
+      if (!transaction.meta) {
+        throw new Error(
+          `Transaction ${signature} is missing execution metadata.`,
+        );
+      }
+      return {
+        slot: transaction.slot.toString(),
+        blockTime: transaction.blockTime?.toString() ?? null,
+        logs: transaction.meta.logMessages ?? [],
+        failed: transaction.meta.err !== null,
+      };
+    });
   }
 }
 

@@ -42,6 +42,13 @@ async function main(): Promise<void> {
       chain,
       auth,
       store,
+      indexerHealth: database
+        ? () =>
+            database.indexerState(
+              config.SOLANA_CLUSTER,
+              "5rnNqVQG4zy4JUYHWxCEaYsbBEpNu8fHLn9p2MsdrVfx",
+            )
+        : undefined,
       onClose: database ? () => database.close() : undefined,
     });
     await app.listen({ host: config.HOST, port: config.PORT });
